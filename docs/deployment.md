@@ -1,6 +1,6 @@
 # EcoLens deployment handoff
 
-This repository is deployment-ready but has not been connected to user-owned Gemini, Supabase, Render, or Expo projects. Keep all credentials in each provider's encrypted secret store; never commit them or place them in the mobile environment.
+EcoLens is deployed from the private `TrulyyGold/EcoLens` repository to Railway, connected to the isolated EcoLens Supabase project and Gemini 3.6 Flash, and linked to Expo EAS project `8831679b-f885-4057-9ddb-5bff2d894666` under `@trulyygolds-team`. Keep credentials in provider secret stores; never commit them or place them in the mobile environment.
 
 ## 1. Choose the demo mode
 
@@ -43,18 +43,22 @@ The current API uses the service role and persists canonical scan rows and priva
 
 For a public deployment, add authentication and per-user ownership checks before exposing `/scan-history` or `/scans/{scan_id}`. The shipped MVP routes are repository-wide and should run only against an isolated demo environment.
 
-## 3. Deploy FastAPI with Render
+## 3. Railway FastAPI deployment
 
-The root `render.yaml` points to `apps/api/Dockerfile` and starts in safe mock mode.
+The Railway project `EcoLens` deploys the `ecolens-api` service from `TrulyyGold/EcoLens@main` using the repository-root Dockerfile.
 
-1. Create a Render Blueprint from the repository root.
-2. Review the generated `ecolens-api` web service before applying it.
-3. Add Gemini and Supabase secrets only if those modes will be demonstrated.
-4. Set `CORS_ORIGINS` to the explicit allowed origins required by any web client; do not leave a broad value for a public production service.
-5. Deploy and verify:
+- Project ID: `8dce0a6b-1bd6-4201-80f4-39182f3e252f`
+- Environment: `production`
+- Service ID: `eac2bbfa-1101-44da-9e4e-64768e7ce2bb`
+- Public API: `https://ecolens-api-production.up.railway.app`
+- Live deployment verified: `332ea4da-98b6-4f0f-9463-224e0eb8cd9d`
+
+The production service stores `GEMINI_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` as masked Railway variables. Non-secret configuration sets live mode, Gemini 3.6 Flash, the EcoLens Supabase URL and bucket, a 45-second analysis timeout, and the upload limits.
+
+Verify:
 
 ```bash
-curl -fsS https://<api-host>/health
+curl -fsS https://ecolens-api-production.up.railway.app/health
 ```
 
 Expected shape:
@@ -64,19 +68,19 @@ Expected shape:
   "status": "ok",
   "service": "ecolens-api",
   "version": "1.0.0",
-  "mock_mode": true,
-  "repository": "memory"
+  "mock_mode": false,
+  "repository": "supabase"
 }
 ```
 
-The values of `mock_mode` and `repository` should reflect the intended demo configuration.
+`render.yaml` remains as an unverified alternative deployment manifest; Railway is the active host.
 
 ## 4. Connect and build the Expo app
 
-Create `apps/mobile/.env` locally or configure the public variable in the Expo build profile:
+The mobile project is linked to Expo owner `trulyygolds-team`, slug `ecolens-mobile`, and EAS project ID `8831679b-f885-4057-9ddb-5bff2d894666`. `app.json` stores that public project linkage, while every EAS build profile sets:
 
 ```dotenv
-EXPO_PUBLIC_API_URL=https://<api-host>
+EXPO_PUBLIC_API_URL=https://ecolens-api-production.up.railway.app
 ```
 
 Only the API base URL belongs in an `EXPO_PUBLIC_*` variable. Build configuration is included in `apps/mobile/eas.json`.
@@ -104,16 +108,22 @@ npm run export:android
 
 ## 5. Post-deployment smoke test
 
-Run against the exact judged deployment and device:
+Verified against the live Railway API on July 24, 2026:
 
-1. `GET /health` returns HTTP 200 with the expected mode and repository.
-2. Upload a known safe image through the app and confirm the result completes or returns a bounded actionable error.
-3. Run the disclosed Banana development fixture and confirm recipes and chat are available.
-4. Run the disclosed Package fixture and confirm nutrition says `estimated data` in the mobile fixture.
-5. Run the disclosed Mushroom fixture and confirm `needs_review`, high risk, do-not-consume, no recipes, and no chat control.
-6. Reopen all three results from Journal and verify a favorite survives an app reload.
-7. If live Gemini is enabled, state clearly which demo steps are live and which are deterministic fixtures.
-8. If Supabase is enabled, restart the API and verify that scan history persists and image URLs remain private/signed.
+1. `GET /health` returned HTTP 200 with `mock_mode=false` and `repository=supabase`.
+2. A live Banana image returned a contract-valid food result with recipes and chat enabled.
+3. A live wild-mushroom image returned `needs_review`, high risk, do-not-consume, expert verification, no recipes, and chat disabled.
+4. Safe-food chat and recipe generation succeeded; direct Mushroom chat and recipe requests remained blocked.
+5. `/scan-history` returned both live scans; Supabase contained two canonical scan rows and two private image objects.
+6. Railway logs showed HTTP 200 for health, analysis, chat, recipes, and history with no service crash.
+
+Still verify on the presentation device:
+
+1. Camera and gallery permissions, upload, loading, retry, and result layouts.
+2. Banana, Package, and Mushroom development fixtures with visible demo labels.
+3. Journal reopen and favorite persistence after an app restart.
+4. Live API reachability on the venue network and disclosed fallback during a forced network failure.
+5. Contrast, dynamic text, accessibility service output, and projector readability.
 
 ## 6. Rollback and fallback
 
@@ -122,13 +132,12 @@ Run against the exact judged deployment and device:
 - If Supabase fails, remove the Supabase environment values and redeploy to use the in-memory repository; disclose that history is process-local.
 - Keep the pitch deck and backup recording or screenshots locally available.
 
-## 7. External checks not completed in this workspace
+## 7. Remaining external checks
 
-- Live Gemini quota, billing, latency, and output behavior
-- Supabase migration execution and RLS behavior in a real project
-- Render deployment and public HTTPS reachability
-- EAS cloud build, signing, and installation on the presentation device
-- Physical camera, permission, layout, contrast, dynamic-text, and network testing
-- Event-specific eligibility, submission form, deadline, and judging-weight verification
+- Trigger and inspect an EAS cloud preview build after confirming the account's build allowance or price.
+- Install the preview on the presentation device and test physical camera, permissions, layout, contrast, dynamic text, and network behavior.
+- Review Gemini and Railway quota or billing settings for the intended demo volume.
+- Add authentication and ownership checks before any public multi-user or production launch.
+- Verify event-specific eligibility, submission fields, deadline, and judging weights.
 
-These checks require the hackathon team's named projects, accounts, credentials, event details, and presentation device. Record evidence in `docs/submission-checklist.md` before presenting or submitting.
+Record evidence in `docs/submission-checklist.md` before presenting or submitting.

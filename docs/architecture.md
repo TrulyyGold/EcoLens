@@ -317,16 +317,17 @@ These are focused regression tests, not evidence of real-world model accuracy, c
 
 ## 15. Deployment topology
 
-The repository includes a FastAPI Dockerfile and Render Blueprint plus Expo configuration. A possible deployed topology is:
+The active deployment uses the private GitHub repository, a Railway FastAPI container, Gemini 3.6 Flash, the isolated EcoLens Supabase project, and Expo EAS project `8831679b-f885-4057-9ddb-5bff2d894666`: 
 
 ```mermaid
 flowchart LR
-    PHONE[Phone or simulator] -->|HTTPS| HOST[FastAPI container]
-    HOST -->|optional live mode| GEMINI[Gemini API]
-    HOST -->|optional persistence| SUPA[Supabase]
+    EXPO[Expo EAS project] --> PHONE[Phone or simulator]
+    PHONE -->|HTTPS| HOST[Railway FastAPI container]
+    HOST -->|structured multimodal request| GEMINI[Gemini 3.6 Flash]
+    HOST -->|private scans and images| SUPA[EcoLens Supabase]
 ```
 
-Documentation must record the actual host/build used for a presentation rather than imply a deployment merely because configuration files exist.
+The verified API origin is `https://ecolens-api-production.up.railway.app`. The EAS project is linked in source; the exact preview build and presentation-device installation remain to be recorded.
 
 ## 16. Optional production hardening — not shipped
 

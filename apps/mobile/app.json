@@ -2,6 +2,7 @@
   "expo": {
     "name": "EcoLens",
     "slug": "ecolens-mobile",
+    "owner": "trulyygolds-team",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -28,6 +29,11 @@
         "backgroundColor": "#163B2E"
       },
       "permissions": ["CAMERA", "READ_MEDIA_IMAGES"]
+    },
+    "extra": {
+      "eas": {
+        "projectId": "8831679b-f885-4057-9ddb-5bff2d894666"
+      }
     },
     "plugins": [
       [

@@ -180,6 +180,8 @@ Full threat model, policy matrix, evaluation cases, and limitations are in [Safe
 ```text
 ecolens/
 ├── README.md
+├── Dockerfile                # Railway-compatible backend container
+├── .dockerignore
 ├── apps/
 │   ├── api/                  # FastAPI service, model adapters, policies, tests
 │   └── mobile/               # Expo React Native app, offline fixtures, tests
@@ -197,7 +199,7 @@ ecolens/
 │   └── pitch-deck.html
 ├── scripts/
 │   └── verify_repo.py
-└── render.yaml
+└── render.yaml               # Unverified alternative host manifest
 ```
 
 ## Two-day build cut line
@@ -208,15 +210,17 @@ ecolens/
 
 If schedule slips, preserve the vertical slice and safety behavior before adding breadth. The minimum credible demo is: one live/fixture scan, one uncertainty case, one follow-up, and one saved journal entry.
 
-## Verified build status
+## Verified build and deployment status
 
 - FastAPI: 19 tests passing and Ruff clean
-- Expo app: 12 tests passing and TypeScript clean
-- Expo Android bundle: exported successfully in local validation
-- Canonical contract: every backend demo response validates against the Draft 2020-12 schema
+- Expo app: 12 tests passing, TypeScript clean, and local Android bundle export successful
+- Canonical contract: backend fixtures and two live Gemini scan responses validate against the Draft 2020-12 schema
+- Railway API: deployed and healthy at <https://ecolens-api-production.up.railway.app>
+- Supabase: two migrations applied, forced RLS enabled, private image bucket verified, and no security-advisor findings
+- Live Gemini: Banana completed with eligible recipes/chat; Mushroom completed with high-risk do-not-consume state, empty recipes, and chat blocked
+- Persistence: live scan history, two private image objects, chat, and recipe endpoints verified against the deployed service
+- Expo: linked to `@trulyygolds-team/ecolens-mobile`, project ID `8831679b-f885-4057-9ddb-5bff2d894666`; EAS cloud preview build and physical-device checks remain
 - Pitch deck: 12 slides with keyboard, button, dot, parent-message, Escape, and touch-swipe navigation
-
-Live Gemini, Supabase, and hosted deployment require project credentials and were intentionally not exercised in the credential-free repository validation.
 
 ## Source note
 

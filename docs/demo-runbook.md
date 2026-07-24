@@ -51,7 +51,7 @@ Do not bring or handle an unknown mushroom specimen for the presentation.
 - [ ] Confirm Mushroom shows `do_not_consume=true`, no recipe cards/generation control, and no chat action.
 - [ ] Open Journal and verify all three results reopen without another analysis.
 - [ ] Favorite/unfavorite one safe result and verify Favorites updates.
-- [ ] If an API is part of the presentation, confirm `[API_BASE_URL]/health` returns HTTP 200 and record whether `repository` is `memory` or `supabase`.
+- [ ] Confirm `https://ecolens-api-production.up.railway.app/health` returns HTTP 200 with `mock_mode=false` and `repository=supabase`.
 - [ ] If showing remote history, use an isolated demo API process, confirm Journal refresh reaches `GET /scan-history`, and verify the repository-wide response merges without removing local fixtures; do not call it per-user history.
 - [ ] Open fallback recording/screenshots locally.
 - [ ] Close notifications, secret-bearing consoles, personal data, and unrelated tabs.

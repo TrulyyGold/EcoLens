@@ -10,11 +10,13 @@ cp .env.example .env
 npm start
 ```
 
-Set `EXPO_PUBLIC_API_URL` to the FastAPI base URL reachable by the simulator or phone. A physical phone generally cannot reach a server through `localhost`; use the computer's LAN address or a deployed HTTPS endpoint.
+The app is linked to Expo account `@trulyygolds-team`, project slug `ecolens-mobile`, and EAS project ID `8831679b-f885-4057-9ddb-5bff2d894666`. All committed EAS build profiles point to the deployed Railway API:
 
 ```dotenv
-EXPO_PUBLIC_API_URL=http://192.168.1.20:8000
+EXPO_PUBLIC_API_URL=https://ecolens-api-production.up.railway.app
 ```
+
+For a separate local backend, override `EXPO_PUBLIC_API_URL` in an uncommitted `.env`. A physical phone generally cannot reach a computer through `localhost`; use the computer's LAN address.
 
 The development home screen also exposes Banana, Package, and Mushroom fixtures. Fixture results are visibly labeled and use the same parser and safety presentation as API responses.
 

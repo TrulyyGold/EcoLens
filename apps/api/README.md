@@ -43,4 +43,4 @@ Set `ECOLENS_MOCK_MODE=false` plus `GEMINI_API_KEY` to use the schema-constraine
 pytest
 ```
 
-Deploy with the included `Dockerfile` or the repository-root Render Blueprint (`../../render.yaml`).
+The active backend deploys from the repository-root `Dockerfile` to Railway at `https://ecolens-api-production.up.railway.app`. `render.yaml` remains an unverified alternative host manifest.

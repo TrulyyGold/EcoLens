@@ -117,9 +117,19 @@ for required in (
 for anchor in re.findall(r"<a\b[^>]*href=\"https?://[^>]+>", deck):
     check('target="_blank"' in anchor and 'rel="noopener noreferrer"' in anchor, f"Unsafe external deck link: {anchor[:120]}")
 
+root_dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+for required in ("COPY apps/api/pyproject.toml ./", "COPY apps/api/app ./app", "uvicorn app.main:app"):
+    check(required in root_dockerfile, f"Railway root Dockerfile is missing: {required}")
+
+app_config = json.loads((ROOT / "apps/mobile/app.json").read_text(encoding="utf-8"))
+check(app_config["expo"].get("owner") == "trulyygolds-team", "Expo owner is not linked")
+check(app_config["expo"].get("extra", {}).get("eas", {}).get("projectId") == "8831679b-f885-4057-9ddb-5bff2d894666", "Expo EAS project ID is not linked")
+eas_config_text = (ROOT / "apps/mobile/eas.json").read_text(encoding="utf-8")
+check("https://ecolens-api-production.up.railway.app" in eas_config_text, "Railway API URL is missing from EAS profiles")
+
 render_manifest = (ROOT / "render.yaml").read_text(encoding="utf-8")
 for required in ("dockerfilePath: ./apps/api/Dockerfile", "dockerContext: ./apps/api", "healthCheckPath: /health"):
-    check(required in render_manifest, f"Render manifest is missing: {required}")
+    check(required in render_manifest, f"Alternative Render manifest is missing: {required}")
 
 # Search source files for common high-risk credential material.
 secret_patterns = {
