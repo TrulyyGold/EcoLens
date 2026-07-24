@@ -18,6 +18,8 @@ EXPO_PUBLIC_API_URL=http://192.168.1.20:8000
 
 The development home screen also exposes Banana, Package, and Mushroom fixtures. Fixture results are visibly labeled and use the same parser and safety presentation as API responses.
 
+App icon and splash PNG files are generated during `npm ci`, `npm start`, and `npm run export:android` by the dependency-free `assets/generate_assets.mjs` script. This keeps fresh checkouts and browser-uploaded source repositories reproducible without storing generated binaries.
+
 ## Commands
 
 ```bash

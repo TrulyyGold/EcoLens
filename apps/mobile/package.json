@@ -4,10 +4,14 @@
   "private": true,
   "main": "index.ts",
   "scripts": {
+    "generate:assets": "node assets/generate_assets.mjs",
+    "postinstall": "node assets/generate_assets.mjs",
+    "prestart": "node assets/generate_assets.mjs",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "preexport:android": "node assets/generate_assets.mjs",
     "export:android": "expo export --platform android --output-dir dist-android",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test src/__tests__/*.test.ts"
