@@ -127,6 +127,7 @@ class GeminiAdapter:
                     system_instruction=system_prompt,
                     response_mime_type="application/json",
                     response_json_schema=schema,
+                    media_resolution=self._types.MediaResolution.MEDIA_RESOLUTION_MEDIUM,
                     temperature=0.1,
                 ),
             )
