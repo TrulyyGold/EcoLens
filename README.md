@@ -58,7 +58,7 @@ GEMINI_API_KEY=your_key_from_a_secure_secret_store
 GEMINI_MODEL=gemini-3.6-flash
 ```
 
-Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` only on the backend after applying `apps/api/migrations/001_initial.sql`.
+Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` only on the backend after applying every SQL file in `apps/api/migrations/` in numeric order.
 
 ### 2. Run the Expo app
 

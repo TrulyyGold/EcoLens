@@ -29,7 +29,7 @@ Before judging, verify that the configured account can access the exact model id
 ## 2. Optional Supabase persistence
 
 1. Create or choose an isolated demo Supabase project containing no production or personal data.
-2. Apply `apps/api/migrations/001_initial.sql` in the SQL editor or through the team's normal migration workflow.
+2. Apply every SQL file in `apps/api/migrations/` in numeric order through the SQL editor or the team's normal migration workflow.
 3. Confirm that the `scan-images` bucket is private.
 4. Add these backend-host secrets:
 

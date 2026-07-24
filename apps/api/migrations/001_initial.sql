@@ -31,26 +31,26 @@ drop policy if exists "Users can read their own scans" on public.scans;
 create policy "Users can read their own scans"
   on public.scans for select
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 drop policy if exists "Users can insert their own scans" on public.scans;
 create policy "Users can insert their own scans"
   on public.scans for insert
   to authenticated
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 drop policy if exists "Users can update their own scans" on public.scans;
 create policy "Users can update their own scans"
   on public.scans for update
   to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
 
 drop policy if exists "Users can delete their own scans" on public.scans;
 create policy "Users can delete their own scans"
   on public.scans for delete
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 create table if not exists public.favorites (
   id uuid primary key default gen_random_uuid(),
@@ -62,6 +62,8 @@ create table if not exists public.favorites (
 
 create index if not exists favorites_user_created_at_idx
   on public.favorites (user_id, created_at desc);
+create index if not exists favorites_scan_id_idx
+  on public.favorites (scan_id);
 
 alter table public.favorites enable row level security;
 alter table public.favorites force row level security;
@@ -70,19 +72,19 @@ drop policy if exists "Users can read their own favorites" on public.favorites;
 create policy "Users can read their own favorites"
   on public.favorites for select
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 drop policy if exists "Users can insert their own favorites" on public.favorites;
 create policy "Users can insert their own favorites"
   on public.favorites for insert
   to authenticated
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 drop policy if exists "Users can delete their own favorites" on public.favorites;
 create policy "Users can delete their own favorites"
   on public.favorites for delete
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 create table if not exists public.chat_messages (
   id uuid primary key default gen_random_uuid(),
@@ -95,6 +97,8 @@ create table if not exists public.chat_messages (
 
 create index if not exists chat_messages_scan_created_at_idx
   on public.chat_messages (scan_id, created_at asc);
+create index if not exists chat_messages_user_id_idx
+  on public.chat_messages (user_id);
 
 alter table public.chat_messages enable row level security;
 alter table public.chat_messages force row level security;
@@ -103,13 +107,13 @@ drop policy if exists "Users can read their own chat messages" on public.chat_me
 create policy "Users can read their own chat messages"
   on public.chat_messages for select
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 drop policy if exists "Users can insert their own chat messages" on public.chat_messages;
 create policy "Users can insert their own chat messages"
   on public.chat_messages for insert
   to authenticated
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 -- Private image bucket. The backend uploads through the service role and returns
 -- one-hour signed URLs. Keep this bucket private; do not add an anonymous SELECT

@@ -13,7 +13,7 @@ class SupabaseScanRepository:
     """Optional Supabase Postgres and Storage repository.
 
     A backend service-role key is recommended. Database RLS remains enabled for
-    direct client access; see migrations/001_initial.sql.
+    direct client access; see the migrations directory.
     """
 
     kind = "supabase"

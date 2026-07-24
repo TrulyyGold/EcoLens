@@ -228,7 +228,7 @@ The service only requires:
 
 `InMemoryScanRepository` implements these process-locally. `SupabaseScanRepository` maps them to the `scans` table and private storage.
 
-### 10.2 Committed optional Supabase migration
+### 10.2 Committed optional Supabase migrations
 
 `apps/api/migrations/001_initial.sql` creates:
 
@@ -237,6 +237,8 @@ The service only requires:
 - `chat_messages` — optional per-scan user/assistant rows;
 - indexes and RLS policies for those tables; and
 - a private `scan-images` bucket limited to JPEG, PNG, and WebP up to 10 MB.
+
+`apps/api/migrations/002_optimize_rls_and_indexes.sql` adds covering foreign-key indexes and changes policy expressions to evaluate `auth.uid()` once per statement, preserving authorization semantics while satisfying the Supabase performance advisor.
 
 The current Supabase repository payload writes no `user_id`, and the API has no caller identity. The migration’s favorites/chat tables and authenticated RLS policies are schema groundwork, not exposed MVP behavior. A service-role key is the documented backend configuration; using a restricted key without an authenticated user context can fail under the migration’s forced RLS.
 

@@ -35,7 +35,7 @@ Provider output is untrusted. Server-side rules always require expert verificati
 
 ## External services
 
-Set `ECOLENS_MOCK_MODE=false` plus `GEMINI_API_KEY` to use the schema-constrained Gemini adapter. Set `SUPABASE_URL` and preferably `SUPABASE_SERVICE_ROLE_KEY` to use Postgres and private Storage; otherwise data remains process-local in memory. Apply `migrations/001_initial.sql` first. Never expose a service-role key to a client.
+Set `ECOLENS_MOCK_MODE=false` plus `GEMINI_API_KEY` to use the schema-constrained Gemini adapter. Set `SUPABASE_URL` and preferably `SUPABASE_SERVICE_ROLE_KEY` to use Postgres and private Storage; otherwise data remains process-local in memory. Apply every SQL file in `migrations/` in numeric order. Never expose a service-role key to a client.
 
 ## Test
 

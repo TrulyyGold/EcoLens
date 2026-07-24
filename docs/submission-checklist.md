@@ -157,7 +157,7 @@ Official references:
 
 ### Optional Supabase mode — check only if shown
 
-- [ ] `apps/api/migrations/001_initial.sql` has been applied to the isolated demo project.
+- [ ] Every SQL file in `apps/api/migrations/` has been applied in numeric order to the isolated demo project.
 - [ ] Migration creates `scans`, `favorites`, `chat_messages`, and private `scan-images` storage as documented.
 - [ ] `/health` reports `repository: supabase`.
 - [ ] API saves/reads/lists `scans` and stores images through the configured private bucket.
