@@ -1,0 +1,30 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+*.egg-info/
+
+# Node and Expo
+node_modules/
+.expo/
+.expo-shared/
+dist*/
+web-build/
+
+# IDE and OS
+.DS_Store
+.vscode/
+.idea/
+
+# Logs and temporary output
+*.log
+coverage/
+.tmp/
+tmp/

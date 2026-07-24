@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "EcoLens",
+    "slug": "ecolens-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "ecolens",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F2F5E9"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ecolens.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "EcoLens uses the camera to identify food, plants, and mushrooms.",
+        "NSPhotoLibraryUsageDescription": "EcoLens uses a selected photo to create a discovery."
+      }
+    },
+    "android": {
+      "package": "com.ecolens.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#163B2E"
+      },
+      "permissions": ["CAMERA", "READ_MEDIA_IMAGES"]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow EcoLens to photograph an item for analysis."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow EcoLens to analyze a photo you choose."
+        }
+      ]
+    ]
+  }
+}

@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <title>EcoLens — Hackathon Pitch</title>
+  <style>
+    :root {
+      --paper: #f8faf4;
+      --paper-strong: #ffffff;
+      --ink: #10251c;
+      --forest: #0b3024;
+      --forest-2: #124532;
+      --green: #2f7d4a;
+      --green-bright: #72c66d;
+      --green-pale: #dfeee0;
+      --citrus: #f4aa43;
+      --citrus-pale: #fff0d6;
+      --red: #a33a2b;
+      --red-pale: #f8e0da;
+      --muted: #66746c;
+      --line: rgba(16, 37, 28, 0.16);
+      --shadow: 0 24px 64px rgba(7, 31, 23, 0.14);
+      --radius: clamp(18px, 2vw, 32px);
+      --pad-x: clamp(28px, 6.5vw, 104px);
+      --pad-y: clamp(28px, 6.5vh, 72px);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--forest);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { font: inherit; }
+
+    .deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      isolation: isolate;
+      background: var(--paper);
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      width: 100%;
+      height: 100%;
+      padding: var(--pad-y) var(--pad-x) clamp(92px, 12vh, 118px);
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 13% 14%, rgba(114, 198, 109, 0.11), transparent 27%),
+        linear-gradient(135deg, rgba(255,255,255,0.82), rgba(248,250,244,0.96)),
+        var(--paper);
+    }
+
+    .slide.active { display: flex; }
+
+    .slide.dark {
+      color: #f5faef;
+      background:
+        radial-gradient(circle at 84% 18%, rgba(114, 198, 109, 0.22), transparent 29%),
+        radial-gradient(circle at 12% 86%, rgba(244, 170, 67, 0.11), transparent 25%),
+        linear-gradient(135deg, #081f18 0%, var(--forest) 48%, #0f3e2d 100%);
+    }
+
+    .slide.citrus-wash {
+      background:
+        radial-gradient(circle at 84% 19%, rgba(244, 170, 67, 0.2), transparent 28%),
+        radial-gradient(circle at 14% 86%, rgba(114, 198, 109, 0.12), transparent 25%),
+        var(--paper);
+    }
+
+    .slide::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      opacity: 0.22;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(11,48,36,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(11,48,36,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: linear-gradient(to bottom, black, transparent 75%);
+    }
+
+    .slide-inner {
+      width: 100%;
+      max-width: 1500px;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 100%;
+      position: relative;
+      z-index: 1;
+    }
+
+    .topline {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      color: var(--muted);
+      font-size: clamp(11px, 1vw, 15px);
+      font-weight: 750;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .dark .topline { color: rgba(245,250,239,0.65); }
+
+    .mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      letter-spacing: 0.11em;
+    }
+
+    .mark::before {
+      content: "";
+      width: 12px;
+      height: 12px;
+      border: 2px solid currentColor;
+      border-radius: 62% 38% 64% 36% / 43% 58% 42% 57%;
+      transform: rotate(-22deg);
+    }
+
+    .specimen-id { font-variant-numeric: tabular-nums; }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      margin-bottom: 22px;
+      max-width: 1050px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 500;
+      font-size: clamp(58px, 9vw, 142px);
+      line-height: 0.9;
+      letter-spacing: -0.055em;
+    }
+
+    h2 {
+      margin-bottom: clamp(20px, 3vh, 36px);
+      max-width: 1120px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 500;
+      font-size: clamp(42px, 6.2vw, 96px);
+      line-height: 0.95;
+      letter-spacing: -0.045em;
+    }
+
+    h3 {
+      margin-bottom: 10px;
+      font-size: clamp(17px, 1.7vw, 25px);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: clamp(16px, 2.4vh, 28px);
+      color: var(--green);
+      font-size: clamp(12px, 1.05vw, 16px);
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .kicker::before {
+      content: "";
+      width: 34px;
+      height: 2px;
+      background: currentColor;
+    }
+
+    .dark .kicker { color: var(--green-bright); }
+
+    .lede {
+      max-width: 820px;
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: clamp(19px, 2vw, 31px);
+      line-height: 1.35;
+      letter-spacing: -0.025em;
+    }
+
+    .dark .lede { color: rgba(245,250,239,0.76); }
+
+    .accent { color: var(--green); }
+    .dark .accent { color: var(--green-bright); }
+    .citrus { color: var(--citrus); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+      gap: clamp(34px, 5.5vw, 88px);
+      align-items: center;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(16px, 2.2vw, 28px);
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: clamp(14px, 1.7vw, 24px);
+    }
+
+    .card {
+      position: relative;
+      padding: clamp(20px, 2.4vw, 34px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.76);
+      box-shadow: 0 12px 38px rgba(7,31,23,0.06);
+      overflow: hidden;
+    }
+
+    .dark .card {
+      border-color: rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.07);
+      box-shadow: none;
+    }
+
+    .card-number {
+      margin-bottom: 18px;
+      color: var(--green);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(32px, 4vw, 62px);
+      line-height: 1;
+    }
+
+    .dark .card-number { color: var(--green-bright); }
+
+    .card p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: clamp(14px, 1.25vw, 19px);
+      line-height: 1.45;
+    }
+
+    .dark .card p { color: rgba(245,250,239,0.68); }
+
+    .label {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      color: var(--forest);
+      background: var(--green-pale);
+      font-size: clamp(10px, 0.85vw, 13px);
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .label.caution { background: var(--citrus-pale); color: #6f430d; }
+    .label.danger { background: var(--red-pale); color: var(--red); }
+    .dark .label { background: rgba(114,198,109,0.16); color: #bce6b6; }
+
+    .field-note {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 18px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .field-note:first-child { border-top: 0; }
+
+    .field-note .glyph {
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      color: var(--forest);
+      background: var(--green-pale);
+      font-weight: 850;
+    }
+
+    .field-note strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: clamp(15px, 1.25vw, 19px);
+    }
+
+    .field-note span {
+      color: var(--muted);
+      font-size: clamp(13px, 1.05vw, 17px);
+      line-height: 1.4;
+    }
+
+    .phone {
+      position: relative;
+      width: min(360px, 75%);
+      margin: 0 auto;
+      padding: 13px;
+      border: 2px solid rgba(11,48,36,0.18);
+      border-radius: 42px;
+      background: #10251c;
+      box-shadow: var(--shadow);
+      transform: rotate(1.6deg);
+    }
+
+    .phone::before {
+      content: "";
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      width: 32%;
+      height: 17px;
+      border-radius: 20px;
+      background: #10251c;
+      transform: translateX(-50%);
+      z-index: 2;
+    }
+
+    .phone-screen {
+      min-height: clamp(430px, 59vh, 620px);
+      padding: 38px 22px 22px;
+      border-radius: 31px;
+      background:
+        radial-gradient(circle at 75% 10%, rgba(114,198,109,0.16), transparent 24%),
+        #f7f9f3;
+      overflow: hidden;
+    }
+
+    .phone-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      color: var(--forest);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .phone-title {
+      margin: 0 0 8px;
+      color: var(--forest);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(28px, 3vw, 40px);
+      line-height: 1;
+    }
+
+    .phone-sub {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .mini-panel {
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 16px;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+
+    .mini-panel strong { display: block; font-size: 14px; margin-bottom: 5px; }
+    .mini-panel p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .mini-panel.alert { background: var(--red-pale); border-color: rgba(163,58,43,0.2); }
+    .mini-panel.alert strong { color: var(--red); }
+
+    .scan-shape {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 0.75;
+      margin: 16px 0;
+      border-radius: 24px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 52% 48%, #d7c6a1 0 13%, transparent 14%),
+        radial-gradient(ellipse at 50% 53%, #a55d38 0 24%, transparent 25%),
+        radial-gradient(ellipse at 45% 42%, #7c9a5a 0 38%, #52753f 39% 52%, #dbe5d2 53% 100%);
+    }
+
+    .scan-shape::before,
+    .scan-shape::after {
+      content: "";
+      position: absolute;
+      width: 34px;
+      height: 34px;
+      border-color: #fff;
+      border-style: solid;
+    }
+
+    .scan-shape::before { top: 18px; left: 18px; border-width: 3px 0 0 3px; }
+    .scan-shape::after { right: 18px; bottom: 18px; border-width: 0 3px 3px 0; }
+
+    .loop {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0;
+      margin-top: clamp(28px, 5vh, 60px);
+      counter-reset: loop;
+    }
+
+    .loop-item {
+      position: relative;
+      padding: 0 clamp(16px, 2vw, 30px);
+      counter-increment: loop;
+    }
+
+    .loop-item:first-child { padding-left: 0; }
+    .loop-item:last-child { padding-right: 0; }
+
+    .loop-item:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      top: 19px;
+      right: -3px;
+      width: 32%;
+      height: 1px;
+      background: var(--green);
+    }
+
+    .loop-item .step {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      margin-bottom: 18px;
+      border-radius: 50%;
+      color: #fff;
+      background: var(--green);
+      font-weight: 850;
+    }
+
+    .loop-item h3 { font-size: clamp(16px, 1.5vw, 23px); }
+    .loop-item p { margin: 0; color: var(--muted); font-size: clamp(13px, 1.05vw, 17px); line-height: 1.35; }
+
+    .provenance-stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .provenance-row {
+      display: grid;
+      grid-template-columns: 118px 1fr;
+      gap: 16px;
+      align-items: center;
+      padding: 14px 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.68);
+    }
+
+    .provenance-row strong { font-size: clamp(13px, 1.05vw, 16px); }
+    .provenance-row span:last-child { color: var(--muted); font-size: clamp(12px, 0.95vw, 15px); line-height: 1.35; }
+
+    .quote {
+      max-width: 1060px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(38px, 5.8vw, 88px);
+      line-height: 1.02;
+      letter-spacing: -0.045em;
+    }
+
+    .quote small {
+      display: block;
+      margin-top: 26px;
+      color: rgba(245,250,239,0.63);
+      font-family: Inter, ui-sans-serif, sans-serif;
+      font-size: clamp(14px, 1.3vw, 20px);
+      font-weight: 650;
+      line-height: 1.45;
+      letter-spacing: 0;
+    }
+
+    .architecture-wrap {
+      width: 100%;
+      margin-top: 8px;
+      padding: clamp(16px, 2vw, 28px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.72);
+      box-shadow: 0 18px 54px rgba(7,31,23,0.07);
+    }
+
+    .architecture {
+      width: 100%;
+      height: auto;
+      max-height: 48vh;
+      display: block;
+    }
+
+    .svg-node { fill: #fff; stroke: rgba(16,37,28,0.22); stroke-width: 2; }
+    .svg-node.primary { fill: #0b3024; stroke: #0b3024; }
+    .svg-node.soft { fill: #dfeee0; stroke: rgba(47,125,74,0.42); }
+    .svg-node.citrus-node { fill: #fff0d6; stroke: rgba(244,170,67,0.7); }
+    .svg-title { fill: #10251c; font-family: Inter, Arial, sans-serif; font-weight: 800; font-size: 24px; }
+    .svg-title.light { fill: #f7fbf4; }
+    .svg-sub { fill: #66746c; font-family: Inter, Arial, sans-serif; font-weight: 600; font-size: 16px; }
+    .svg-sub.light { fill: rgba(247,251,244,0.72); }
+    .svg-arrow { fill: none; stroke: #2f7d4a; stroke-width: 4; marker-end: url(#arrow); }
+    .svg-label { fill: #2f7d4a; font-family: Inter, Arial, sans-serif; font-weight: 800; font-size: 13px; letter-spacing: 1.4px; }
+
+    .same-path {
+      display: grid;
+      grid-template-columns: 1fr auto 1.25fr auto 1fr;
+      gap: clamp(10px, 2vw, 28px);
+      align-items: stretch;
+      margin-top: clamp(26px, 5vh, 54px);
+    }
+
+    .path-node {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 176px;
+      padding: clamp(18px, 2.2vw, 30px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.76);
+    }
+
+    .path-node.core { color: #fff; background: var(--forest); }
+    .path-node p { margin: 7px 0 0; color: var(--muted); font-size: clamp(13px, 1vw, 16px); line-height: 1.4; }
+    .path-node.core p { color: rgba(255,255,255,0.68); }
+    .path-arrow { display: grid; place-items: center; color: var(--green); font-size: clamp(24px, 3vw, 44px); }
+
+    .dual-stack {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(18px, 2.4vw, 34px);
+      margin-top: clamp(22px, 4vh, 44px);
+    }
+
+    .conversation {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .bubble {
+      max-width: 88%;
+      padding: 14px 17px;
+      border-radius: 18px 18px 5px 18px;
+      color: var(--forest);
+      background: var(--green-pale);
+      font-size: clamp(13px, 1.05vw, 16px);
+      line-height: 1.4;
+    }
+
+    .bubble.answer {
+      justify-self: end;
+      border-radius: 18px 18px 18px 5px;
+      color: #fff;
+      background: var(--forest);
+    }
+
+    .journal-item {
+      display: grid;
+      grid-template-columns: 58px 1fr;
+      gap: 14px;
+      align-items: center;
+      margin-top: 18px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.72);
+    }
+
+    .journal-thumb {
+      display: grid;
+      place-items: center;
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      color: #fff;
+      background: var(--green);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 27px;
+    }
+
+    .journal-item strong { display: block; margin-bottom: 4px; }
+    .journal-item span { color: var(--muted); font-size: 13px; }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(20px, 3vw, 44px);
+      margin-top: clamp(24px, 4vh, 46px);
+    }
+
+    .day {
+      padding: clamp(24px, 3vw, 42px);
+      border-radius: var(--radius);
+      color: #fff;
+      background: var(--forest);
+    }
+
+    .day:nth-child(2) { color: var(--forest); background: var(--green-pale); }
+    .day-tag { margin-bottom: 24px; font-size: 12px; font-weight: 850; letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.7; }
+    .day h3 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(28px, 3vw, 44px); font-weight: 500; }
+    .day ul { display: grid; gap: 10px; margin: 20px 0 0; padding: 0; list-style: none; }
+    .day li { position: relative; padding-left: 22px; font-size: clamp(13px, 1.05vw, 17px); line-height: 1.4; }
+    .day li::before { content: ""; position: absolute; top: 0.55em; left: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--green-bright); }
+    .day:nth-child(2) li::before { background: var(--green); }
+
+    .cutline {
+      margin-top: 20px;
+      padding: 14px 18px;
+      border-left: 4px solid var(--citrus);
+      color: var(--muted);
+      background: rgba(255,240,214,0.5);
+      font-size: clamp(13px, 1.05vw, 17px);
+      line-height: 1.4;
+    }
+
+    .judge-card {
+      min-height: 216px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .judge-card .proof {
+      margin-top: auto;
+      padding-top: 22px;
+      color: var(--green);
+      font-size: clamp(11px, 0.85vw, 14px);
+      font-weight: 850;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .source-note {
+      max-width: 980px;
+      margin-top: clamp(28px, 5vh, 54px);
+      padding-top: 18px;
+      border-top: 1px solid rgba(245,250,239,0.2);
+      color: rgba(245,250,239,0.62);
+      font-size: clamp(10px, 0.82vw, 13px);
+      line-height: 1.55;
+    }
+
+    .source-note strong { color: rgba(245,250,239,0.84); }
+    .source-note a { color: #c5eac0; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+    .sources {
+      display: grid;
+      gap: 7px;
+      margin-top: 8px;
+    }
+
+    .closing-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 26px;
+      color: var(--green-bright);
+      font-size: clamp(13px, 1.2vw, 18px);
+      font-weight: 850;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .closing-mark .leaf {
+      width: 25px;
+      height: 38px;
+      border: 2px solid currentColor;
+      border-radius: 75% 25% 70% 30% / 70% 34% 66% 30%;
+      transform: rotate(-22deg);
+    }
+
+    .controls {
+      position: fixed;
+      z-index: 20;
+      left: max(22px, env(safe-area-inset-left));
+      right: max(22px, env(safe-area-inset-right));
+      bottom: max(18px, env(safe-area-inset-bottom));
+      display: grid;
+      grid-template-columns: auto minmax(120px, 1fr) auto;
+      align-items: center;
+      gap: clamp(12px, 2vw, 26px);
+      pointer-events: none;
+    }
+
+    .nav-cluster,
+    .counter,
+    .dots { pointer-events: auto; }
+
+    .nav-cluster {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-button {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 50%;
+      color: #fff;
+      background: rgba(11,48,36,0.93);
+      box-shadow: 0 10px 28px rgba(7,31,23,0.22);
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease, opacity 160ms ease;
+    }
+
+    .nav-button:hover:not(:disabled) { transform: translateY(-2px); background: var(--green); }
+    .nav-button:focus-visible, .dot:focus-visible { outline: 3px solid var(--citrus); outline-offset: 3px; }
+    .nav-button:disabled { opacity: 0.34; cursor: not-allowed; }
+
+    .dots {
+      justify-self: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 7px;
+      max-width: min(62vw, 760px);
+      padding: 10px 14px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 999px;
+      background: rgba(11,48,36,0.88);
+      backdrop-filter: blur(12px);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.38);
+      cursor: pointer;
+      transition: width 160ms ease, background 160ms ease;
+    }
+
+    .dot[aria-current="true"] { width: 28px; background: var(--green-bright); }
+
+    .counter {
+      justify-self: end;
+      min-width: 68px;
+      padding: 10px 13px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 999px;
+      color: rgba(255,255,255,0.82);
+      background: rgba(11,48,36,0.88);
+      font-size: 12px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.08em;
+      text-align: center;
+      backdrop-filter: blur(12px);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 850px), (max-height: 660px) {
+      :root { --pad-x: clamp(22px, 5vw, 50px); --pad-y: clamp(22px, 4vh, 42px); }
+      .slide { padding-bottom: 84px; }
+      .grid-2 { grid-template-columns: 1fr 0.8fr; gap: 28px; }
+      .grid-3, .grid-4 { gap: 12px; }
+      .card { padding: 18px; }
+      .phone-screen { min-height: 385px; padding: 34px 17px 17px; }
+      .loop { margin-top: 24px; }
+      .loop-item { padding: 0 12px; }
+      .architecture { max-height: 43vh; }
+      .judge-card { min-height: 165px; }
+    }
+
+    @media (max-width: 680px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .grid-2 > :last-child { display: none; }
+      .grid-3 { grid-template-columns: 1fr; }
+      .grid-3 .card:nth-child(n+3) { display: none; }
+      .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .loop { grid-template-columns: repeat(2, 1fr); gap: 22px 0; }
+      .loop-item:nth-child(2)::after { display: none; }
+      .same-path { grid-template-columns: 1fr; }
+      .path-arrow { min-height: 22px; transform: rotate(90deg); }
+      .path-node { min-height: auto; }
+      .dual-stack { grid-template-columns: 1fr; }
+      .dual-stack .card:last-child { display: none; }
+      .timeline { grid-template-columns: 1fr; }
+      .timeline .day:nth-child(2) { display: none; }
+      .dots { gap: 5px; padding: 8px 10px; }
+      .dot { width: 6px; height: 6px; }
+      .dot[aria-current="true"] { width: 18px; }
+      .topline .specimen-id { display: none; }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .slide.active .kicker,
+      .slide.active h1,
+      .slide.active h2,
+      .slide.active .lede,
+      .slide.active .grid-2,
+      .slide.active .grid-3,
+      .slide.active .grid-4,
+      .slide.active .loop,
+      .slide.active .architecture-wrap,
+      .slide.active .same-path,
+      .slide.active .dual-stack,
+      .slide.active .timeline,
+      .slide.active .source-note {
+        animation: rise 440ms cubic-bezier(.2,.75,.25,1) both;
+      }
+
+      .slide.active .grid-2,
+      .slide.active .grid-3,
+      .slide.active .grid-4,
+      .slide.active .loop,
+      .slide.active .architecture-wrap,
+      .slide.active .same-path,
+      .slide.active .dual-stack,
+      .slide.active .timeline { animation-delay: 70ms; }
+
+      @keyframes rise {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+    }
+
+    @media print {
+      html, body { overflow: visible; height: auto; background: #fff; }
+      .deck { width: auto; height: auto; }
+      .slide, .slide.active { position: relative; display: flex !important; width: 100%; height: 100vh; page-break-after: always; }
+      .controls { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" id="deck" aria-label="EcoLens hackathon pitch deck">
+    <section class="slide dark active" data-title="EcoLens" aria-hidden="false">
+      <div class="slide-inner">
+        <div class="topline">
+          <span class="mark">EcoLens</span>
+          <span class="specimen-id">Hackathon prototype · 01</span>
+        </div>
+        <div class="grid-2">
+          <div>
+            <div class="kicker">A responsible visual field guide</div>
+            <h1>Point.<br><span class="accent">Learn.</span><br>Decide.</h1>
+            <p class="lede">From food and packages to plants and mushrooms—identification with uncertainty, provenance, and a safer next step.</p>
+          </div>
+          <div class="phone" aria-label="Illustrative EcoLens mobile scan interface">
+            <div class="phone-screen">
+              <div class="phone-header"><span>EcoLens</span><span>Scan</span></div>
+              <p class="phone-title">What did you find?</p>
+              <p class="phone-sub">Center one item. We will show what is known, inferred, and uncertain.</p>
+              <div class="scan-shape" aria-hidden="true"></div>
+              <div class="mini-panel">
+                <strong>Evidence before answers</strong>
+                <p>Identity · uncertainty · safety · context</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide citrus-wash" data-title="The gap" aria-hidden="true">
+      <div class="slide-inner">
+        <div class="topline">
+          <span class="mark">The gap</span>
+          <span class="specimen-id">Field note · 02</span>
+        </div>
+        <div class="kicker">Recognition is not the decision</div>
+        <h2>A label is only<br>the <span class="accent">first answer.</span></h2>
+        <div class="grid-3">
+          <article class="card">
+            <div class="card-number">01</div>
+            <h3>What is it?</h3>
+            <p>A likely identity without evidence or alternatives feels more certain than it is.</p>
+          </article>
+          <article class="card">
+            <div class="card-number">02</div>
+            <h3>Can I trust the number?</h3>
+            <p>A label reading, an estimate, and general knowledge are not interchangeable.</p>
+          </article>
+          <article class="card">
+            <div class="card-number">03</div>
+            <h3>What should I do next?</h3>
+            <p>In safety-sensitive cases, inspiration must yield to a clear, useful stop.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="The product" aria-hidden="true">
+      <div class="slide-inner">
+        <div class="topline">
+          <span class="mark">The product loop</span>
+          <span class="specimen-id">Observation · 03</span>
+        </div>
+        <div class="kicker">A field guide that keeps its caveats</div>
+        <h2>See more than<br>a <span class="accent">name.</span></h2>
+        <div class="loop" aria-label="EcoLens four-step product loop">
+          <div class="loop-item">
+            <div class="step">1</div>
+            <h3>Scan</h3>
+            <p>Food, packaged snacks, plants, or mushrooms.</p>
+          </div>
+          <div class="loop-item">
+            <div class="step">2</div>
+            <h3>Understand</h3>
+            <p>Likely identity, confidence, evidence, and alternatives.</p>
+          </div>
+          <div class="loop-item">
+            <div class="step">3</div>
+            <h3>Decide</h3>
+            <p>Safety first. Recipes only when policy allows.</p>
+          </div>
+          <div class="loop-item">
+            <div class="step">4</div>
+            <h3>Remember</h3>
+            <p>Contextual chat and a discovery journal.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide citrus-wash" data-title="Provenance" aria-hidden="true">
+      <div class="slide-inner">
+        <div class="topline">
+          <span class="mark">Nutrition provenance</span>
+          <span class="specimen-id">Evidence card · 04</span>
+        </div>
+        <div class="grid-2">
+          <div>
+            <div class="kicker">Numbers need a source</div>
+            <h2>Know what was<br><span class="accent">read</span> vs. inferred.</h2>
+            <p class="lede">EcoLens carries provenance into the result and the conversation—so a visual estimate never masquerades as a package label.</p>
+          </div>
+          <div class="provenance-stack" aria-label="Nutrition provenance states">
+            <div class="provenance-row"><span class="label">Label</span><span>Read from values visibly present in the image.</span></div>
+            <div class="provenance-row"><span class="label caution">Estimated</span><span>Approximate; portion and context may be missing.</span></div>
+            <div class="provenance-row"><span class="label">General</span><span>Reference knowledge, not this exact serving.</span></div>
+            <div class="provenance-row"><span class="label danger">Unavailable</span><span>No invented zeros. No false precision.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide dark" data-title="Safety posture" aria-hidden="true">
+      <div class="slide-inner">
+        <div class="topline">
+          <span class="mark">Safety posture</span>
+          <span class="specimen-id">Guardrail · 05</span>
+        </div>
+        <div class="kicker">Useful when confident · conservative when not</div>
+        <div class="quote">
+          Safety is not<br>a disclaimer.<br><span class="accent">It is a gate.</span>
+          <small>Typed validation checks shape. Deterministic FastAPI policy checks eligibility. The model may increase caution; it cannot authorize its way around the product.</small>
+        </div>
+        <div class="grid-4" style="margin-top: clamp(28px, 5vh, 54px);">
+          <article class="card"><h3>Visible uncertainty</h3><p>Confidence, evidence, alternatives, and review state stay near the identity.</p></article>
+          <article class="card"><h3>Safety before delight</h3><p>Warnings appear before nutrition, facts, chat prompts, or recipes.</p></article>
+          <article class="card"><h3>Fail closed</h3><p>Unknown risk, review state, or expert verification removes recipes.</p></article>
+          <article class="card"><h3>Chat inherits risk</h3><p>A follow-up cannot negotiate a blocked result into permission.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="The deliberate stop" aria-hidden="true">
+      <div class="slide-inner">
+        <div class="topline">
+          <span class="mark">The deliberate stop</span>
+          <span class="specimen-id">Specimen policy · 06</span>
+        </div>
+        <div class="grid-2">
+          <div>
+            <div class="kicker">Mushrooms get the strictest path</div>
+            <h2>The best recipe<br>is sometimes <span class="accent">none.</span></h2>
+            <p class="lede">A single photograph cannot establish edibility. EcoLens can support learning without turning resemblance into consumption advice.</p>
+          </div>
+          <div class="phone" style="transform: rotate(-1.2deg);" aria-label="Illustrative blocked mushroom result">
+            <div class="phone-screen">
+              <div class="phone-header"><span>Likely match</span><span class="label caution">Review</span></div>
+              <p class="phone-title">Wild mushroom</p>
+              <p class="phone-sub">Visual traits overlap with multiple species. Qualified local verification is required.</p>
+              <div class="mini-panel alert">
+                <strong>Do not consume based on this scan</strong>
+                <p>A photo cannot establish edibility. Keep it away from food and seek a qualified local expert.</p>
+              </div>
+              <div class="mini-panel">
+                <strong>Recipes intentionally withheld</strong>
+                <p>Server policy removes them before the result reaches the app.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide citrus-wash" data-title="Architecture" aria-hidden="true">
+      <div class="slide-inner">
+        <div class="topline">
+          <span class="mark">Architecture</span>
+          <span class="specimen-id">System plate · 07</span>
+        </div>
+        <div style="display:flex;align-items:end;justify-content:space-between;gap:30px;">
+          <div>
+            <div class="kicker">Model proposes · product decides</div>
+            <h2 style="margin-bottom:16px;">A thin, inspectable<br><span class="accent">trust boundary.</span></h2>
+          </div>
+          <p class="lede" style="max-width:470px;margin-bottom:20px;">Shared contract, server-owned metadata, deterministic policy, optional private persistence.</p>
+        </div>
+        <div class="architecture-wrap">
+          <svg class="architecture" viewBox="0 0 1220 470" role="img" aria-labelledby="architecture-title architecture-desc">
+            <title id="architecture-title">EcoLens system architecture</title>
+            <desc id="architecture-desc">The Expo app sends images and eligible questions to FastAPI. FastAPI validates uploads, parses typed provider output, authors metadata, and enforces safety policy. A provider adapter selects Gemini or deterministic backend fixtures. Supabase can optionally store private scans and images, while the mobile journal remains local.</desc>
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#2f7d4a"></path>
+              </marker>
+            </defs>
+
+            <path class="svg-arrow" d="M245 210 C285 210 285 210 325 210"></path>
+            <path class="svg-arrow" d="M615 210 C650 210 650 210 690 210"></path>
+            <path class="svg-arrow" d="M940 178 C982 150 982 125 1020 125"></path>
+            <path class="svg-arrow" d="M940 242 C982 270 982 300 1020 300"></path>
+            <path class="svg-arrow" d="M470 305 C470 352 635 382 690 382"></path>
+
+            <text class="svg-label" x="268" y="194">HTTPS</text>
+            <text class="svg-label" x="626" y="194">TYPED REQUEST</text>
+            <text class="svg-label" x="500" y="358">OPTIONAL RECORDS</text>
+
+            <rect class="svg-node soft" x="30" y="125" width="215" height="170" rx="28"></rect>
+            <text class="svg-title" x="58" y="178">Expo app</text>
+            <text class="svg-sub" x="58" y="212">Capture · result UX</text>
+            <text class="svg-sub" x="58" y="239">Chat · local journal</text>
+            <text class="svg-sub" x="58" y="266">Visible demo badge</text>
+
+            <rect class="svg-node primary" x="325" y="95" width="290" height="230" rx="30"></rect>
+            <text class="svg-title light" x="357" y="145">FastAPI</text>
+            <text class="svg-sub light" x="357" y="183">Upload + timeout controls</text>
+            <text class="svg-sub light" x="357" y="214">Pydantic response boundary</text>
+            <text class="svg-sub light" x="357" y="245">Deterministic safety gate</text>
+            <text class="svg-sub light" x="357" y="276">Authoritative metadata</text>
+
+            <rect class="svg-node soft" x="690" y="140" width="250" height="140" rx="28"></rect>
+            <text class="svg-title" x="720" y="194">Provider adapter</text>
+            <text class="svg-sub" x="720" y="227">One interface</text>
+            <text class="svg-sub" x="720" y="253">Bounded errors</text>
+
+            <rect class="svg-node" x="1020" y="70" width="175" height="110" rx="24"></rect>
+            <text class="svg-title" x="1047" y="118">Gemini</text>
+            <text class="svg-sub" x="1047" y="146">3.6 Flash · live</text>
+
+            <rect class="svg-node citrus-node" x="1020" y="245" width="175" height="110" rx="24"></rect>
+            <text class="svg-title" x="1047" y="293">Fixtures</text>
+            <text class="svg-sub" x="1047" y="321">Disclosed demo data</text>
+
+            <rect class="svg-node" x="690" y="330" width="250" height="105" rx="26"></rect>
+            <text class="svg-title" x="720" y="376">Optional Supabase</text>
+            <text class="svg-sub" x="720" y="406">Scans + private storage</text>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="One contract" aria-hidden="true">
+      <div class="slide-inner">
+        <div class="topline">
+          <span class="mark">Resilient by design</span>
+          <span class="specimen-id">Interface key · 08</span>
+        </div>
+        <div class="kicker">No demo theater</div>
+        <h2>One result contract.<br><span class="accent">Two demo paths.</span></h2>
+        <div class="same-path" aria-label="Live and fixture providers use the same validation and product path">
+          <div class="path-node">
+            <span class="label">Live</span>
+            <h3 style="margin-top:16px;">Gemini 3.6 Flash</h3>
+            <p>Multimodal candidate output through the provider adapter.</p>
+          </div>
+          <div class="path-arrow" aria-hidden="true">→</div>
+          <div class="path-node core">
+            <span class="label">Backend boundary</span>
+            <h3 style="margin-top:16px;">Typed output + safety policy</h3>
+            <p>Pydantic parsing, server-owned metadata, recipe eligibility, bounded errors.</p>
+          </div>
+          <div class="path-arrow" aria-hidden="true">→</div>
+          <div class="path-node">
+            <span class="label caution">Fallback</span>
+            <h3 style="margin-top:16px;">Disclosed fixtures</h3>
+            <p>Local fixtures use the same strict parser and result UI, with a development badge.</p>
+          </div>
+        </div>
+        <div class="cutline"><strong>The fallback proves product behavior, not model accuracy.</strong> Backend mock scenarios exercise server policy; local fixtures protect the live presentation path.</div>
+      </div>
+    </section>
+
+    <section class="slide citrus-wash" data-title="Context" aria-hidden="true">
+      <div class="slide-inner">
+        <div class="topline">
+          <span class="mark">Context that persists</span>
+          <span class="specimen-id">Discovery log · 09</span>
+        </div>
+        <div class="kicker">The scan is a beginning</div>
+        <h2>Ask safely.<br><span class="accent">Remember honestly.</span></h2>
+        <div class="dual-stack">
+          <article class="card">
+            <span class="label">Contextual chat</span>
+            <h3 style="margin-top:18px;">Provenance travels with the question.</h3>
+            <div class="conversation">
+              <div class="bubble">Where did these nutrition values come from?</div>
+              <div class="bubble answer">They are estimated reference values—not a reading of this package. Check the physical label.</div>
+            </div>
+          </article>
+          <article class="card">
+            <span class="label">Discovery journal</span>
+            <h3 style="margin-top:18px;">An observation, not a verdict.</h3>
+            <div class="journal-item">
+              <div class="journal-thumb">M</div>
+              <div><strong>Wild mushroom · needs review</strong><span>Uncertainty and safety state preserved</span></div>
+            </div>
+            <div class="journal-item">
+              <div class="journal-thumb" style="background:var(--citrus);">P</div>
+              <div><strong>Packaged snack · estimated source</strong><span>Nutrition provenance preserved</span></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Build plan" aria-hidden="true">
+      <div class="slide-inner">
+        <div class="topline">
+          <span class="mark">Build plan</span>
+          <span class="specimen-id">Two-day cut · 10</span>
+        </div>
+        <div class="kicker">Narrow enough to finish</div>
+        <h2>Two days.<br>One complete <span class="accent">vertical slice.</span></h2>
+        <div class="timeline">
+          <article class="day">
+            <div class="day-tag">Day 01 · Make it real</div>
+            <h3>Camera to governed result</h3>
+            <ul>
+              <li>Expo + FastAPI scaffolds</li>
+              <li>Provider adapter + fixtures</li>
+              <li>Shared scan-result contract</li>
+              <li>Identity, uncertainty, safety UI</li>
+            </ul>
+          </article>
+          <article class="day">
+            <div class="day-tag">Day 02 · Make it complete</div>
+            <h3>Context, memory, proof</h3>
+            <ul>
+              <li>Deterministic recipe gate</li>
+              <li>Safety-aware contextual chat</li>
+              <li>Local journal · optional Supabase scans</li>
+              <li>Telemetry, rehearsal, fallback</li>
+            </ul>
+          </article>
+        </div>
+        <div class="cutline"><strong>Cut line:</strong> preserve the safe vertical slice before adding breadth. No social feed, commerce, medical claims, or production-scale promise.</div>
+      </div>
+    </section>
+
+    <section class="slide citrus-wash" data-title="Why it wins" aria-hidden="true">
+      <div class="slide-inner">
+        <div class="topline">
+          <span class="mark">Judging proof</span>
+          <span class="specimen-id">Evidence map · 11</span>
+        </div>
+        <div class="kicker">Built to prove, not just promise</div>
+        <h2>Every demo beat<br>answers <span class="accent">“why this?”</span></h2>
+        <div class="grid-4">
+          <article class="card judge-card">
+            <h3>Problem</h3>
+            <p>Recognition tools stop before the decision that carries uncertainty and risk.</p>
+            <div class="proof">Proof · the hook</div>
+          </article>
+          <article class="card judge-card">
+            <h3>Product</h3>
+            <p>Provenance, a deliberate stop, contextual chat, and a discovery journal.</p>
+            <div class="proof">Proof · live journeys</div>
+          </article>
+          <article class="card judge-card">
+            <h3>Engineering</h3>
+            <p>Provider adapter, strict contract, deterministic policy, optional private persistence.</p>
+            <div class="proof">Proof · architecture</div>
+          </article>
+          <article class="card judge-card">
+            <h3>Trust</h3>
+            <p>Visible uncertainty, recipe suppression, blocked unsafe chat, honest fixtures.</p>
+            <div class="proof">Proof · mushroom case</div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide dark" data-title="Close" aria-hidden="true">
+      <div class="slide-inner">
+        <div class="topline">
+          <span class="mark">EcoLens</span>
+          <span class="specimen-id">Closing plate · 12</span>
+        </div>
+        <div class="closing-mark"><span class="leaf" aria-hidden="true"></span>Recognition with responsibility</div>
+        <h2 style="font-size:clamp(56px,8.3vw,128px);max-width:1160px;">Point. Learn.<br><span class="accent">Decide with context.</span></h2>
+        <p class="lede" style="max-width:920px;">Evidence when it can help. Provenance when numbers matter. A clear stop when uncertainty carries risk.</p>
+
+        <div class="source-note">
+          <strong>Prototype note.</strong> EcoLens does not establish identity, edibility, freshness, allergen status, contamination status, or personalized medical/nutrition safety. Demo fixtures prove intended product behavior, not real-world accuracy. No performance, usage, or cost metric is claimed.
+          <div class="sources">
+            <span><strong>Official Gemini sources:</strong></span>
+            <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener noreferrer">Gemini model catalog — ai.google.dev/gemini-api/docs/models</a>
+            <a href="https://ai.google.dev/gemini-api/docs/image-understanding" target="_blank" rel="noopener noreferrer">Image understanding — ai.google.dev/gemini-api/docs/image-understanding</a>
+            <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener noreferrer">Gemini Developer API pricing — ai.google.dev/gemini-api/docs/pricing</a>
+          </div>
+          <span>Model identifiers, capabilities, quotas, pricing, and data-use conditions can change; verify at implementation and deployment time.</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="controls" aria-label="Slide navigation">
+    <div class="nav-cluster">
+      <button class="nav-button" id="prev" type="button" aria-label="Previous slide" title="Previous slide (Left arrow)">←</button>
+      <button class="nav-button" id="next" type="button" aria-label="Next slide" title="Next slide (Right arrow)">→</button>
+    </div>
+    <div class="dots" id="dots" aria-label="Choose slide"></div>
+    <div class="counter" id="counter" aria-live="polite">01 / 12</div>
+  </nav>
+
+  <div class="sr-only" id="announcement" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      const prevButton = document.getElementById("prev");
+      const nextButton = document.getElementById("next");
+      const dotsContainer = document.getElementById("dots");
+      const counter = document.getElementById("counter");
+      const announcement = document.getElementById("announcement");
+      const pad = (value) => String(value).padStart(2, "0");
+      let current = 0;
+      let touchStartX = null;
+      let touchStartY = null;
+
+      const dots = slides.map((slide, index) => {
+        const dot = document.createElement("button");
+        dot.type = "button";
+        dot.className = "dot";
+        dot.setAttribute("aria-label", `Go to slide ${index + 1}: ${slide.dataset.title || "Untitled"}`);
+        dot.addEventListener("click", () => show(index, true));
+        dotsContainer.appendChild(dot);
+        return dot;
+      });
+
+      function show(index, announce) {
+        current = Math.max(0, Math.min(index, slides.length - 1));
+
+        slides.forEach((slide, slideIndex) => {
+          const isActive = slideIndex === current;
+          slide.classList.toggle("active", isActive);
+          slide.setAttribute("aria-hidden", String(!isActive));
+          if (isActive) {
+            slide.removeAttribute("inert");
+          } else {
+            slide.setAttribute("inert", "");
+          }
+        });
+
+        dots.forEach((dot, dotIndex) => {
+          dot.setAttribute("aria-current", String(dotIndex === current));
+          dot.tabIndex = dotIndex === current ? 0 : -1;
+        });
+
+        prevButton.disabled = current === 0;
+        nextButton.disabled = current === slides.length - 1;
+        counter.textContent = `${pad(current + 1)} / ${pad(slides.length)}`;
+        document.title = `EcoLens — ${slides[current].dataset.title || `Slide ${current + 1}`}`;
+
+        if (announce) {
+          announcement.textContent = `Slide ${current + 1} of ${slides.length}: ${slides[current].dataset.title || "Untitled"}`;
+        }
+      }
+
+      function next() { show(current + 1, true); }
+      function previous() { show(current - 1, true); }
+
+      prevButton.addEventListener("click", previous);
+      nextButton.addEventListener("click", next);
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") {
+          event.preventDefault();
+          next();
+        } else if (event.key === "ArrowLeft" || event.key === "PageUp") {
+          event.preventDefault();
+          previous();
+        } else if (event.key === "Home") {
+          event.preventDefault();
+          show(0, true);
+        } else if (event.key === "End") {
+          event.preventDefault();
+          show(slides.length - 1, true);
+        } else if (event.key === "Escape") {
+          window.parent.postMessage({ type: "close-fullscreen" }, "*");
+        }
+      });
+
+      window.addEventListener("message", (event) => {
+        const data = event.data;
+        if (!data || data.type !== "navigate") return;
+        if (data.direction === "next") next();
+        if (data.direction === "prev") previous();
+      });
+
+      document.addEventListener("touchstart", (event) => {
+        if (event.touches.length !== 1) return;
+        touchStartX = event.touches[0].clientX;
+        touchStartY = event.touches[0].clientY;
+      }, { passive: true });
+
+      document.addEventListener("touchend", (event) => {
+        if (touchStartX === null || touchStartY === null || event.changedTouches.length !== 1) return;
+        const deltaX = event.changedTouches[0].clientX - touchStartX;
+        const deltaY = event.changedTouches[0].clientY - touchStartY;
+        touchStartX = null;
+        touchStartY = null;
+
+        if (Math.abs(deltaX) < 50 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+        if (deltaX < 0) next();
+        if (deltaX > 0) previous();
+      }, { passive: true });
+
+      show(0, false);
+    }());
+  </script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ecolens.local/schemas/scan-result.schema.json",
+  "title": "EcoLens Scan Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "scan_id",
+    "status",
+    "identification",
+    "description",
+    "safety",
+    "recipes",
+    "facts",
+    "created_at",
+    "chat_available",
+    "analysis_meta"
+  ],
+  "properties": {
+    "scan_id": { "type": "string", "format": "uuid" },
+    "status": { "type": "string", "enum": ["complete", "needs_review"] },
+    "identification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "category",
+        "confidence",
+        "confidence_label",
+        "evidence",
+        "alternatives",
+        "requires_expert_verification"
+      ],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "scientific_name": { "type": ["string", "null"] },
+        "brand": { "type": ["string", "null"] },
+        "category": {
+          "type": "string",
+          "enum": ["food", "packaged_food", "plant", "mushroom", "unknown"]
+        },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "confidence_label": { "type": "string", "enum": ["high", "moderate", "low"] },
+        "evidence": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 5
+        },
+        "alternatives": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "reason"],
+            "properties": {
+              "name": { "type": "string" },
+              "reason": { "type": "string" }
+            }
+          },
+          "maxItems": 3
+        },
+        "requires_expert_verification": { "type": "boolean" }
+      }
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["risk_level", "headline", "warnings", "do_not_consume"],
+      "properties": {
+        "risk_level": { "type": "string", "enum": ["low", "caution", "high", "unknown"] },
+        "headline": { "type": "string" },
+        "warnings": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "do_not_consume": { "type": "boolean" },
+        "emergency_guidance": { "type": ["string", "null"] }
+      }
+    },
+    "nutrition": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["basis", "notes"],
+          "properties": {
+            "basis": { "type": "string", "enum": ["label", "estimated", "general", "unavailable"] },
+            "serving_size": { "type": ["string", "null"] },
+            "calories": { "type": ["number", "null"], "minimum": 0 },
+            "protein_g": { "type": ["number", "null"], "minimum": 0 },
+            "carbs_g": { "type": ["number", "null"], "minimum": 0 },
+            "fat_g": { "type": ["number", "null"], "minimum": 0 },
+            "sugar_g": { "type": ["number", "null"], "minimum": 0 },
+            "sodium_mg": { "type": ["number", "null"], "minimum": 0 },
+            "notes": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      ]
+    },
+    "recipes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "time_minutes", "difficulty", "ingredients", "steps", "dietary_notes"],
+        "properties": {
+          "title": { "type": "string" },
+          "time_minutes": { "type": "integer", "minimum": 1 },
+          "difficulty": { "type": "string", "enum": ["easy", "medium"] },
+          "ingredients": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "steps": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "dietary_notes": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "maxItems": 3
+    },
+    "facts": { "type": "array", "items": { "type": "string" }, "maxItems": 5 },
+    "image_url": { "type": ["string", "null"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "chat_available": { "type": "boolean" },
+    "analysis_meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "prompt_version", "mock", "latency_ms"],
+      "properties": {
+        "model": { "type": "string" },
+        "prompt_version": { "type": "string" },
+        "mock": { "type": "boolean" },
+        "latency_ms": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

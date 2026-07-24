@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: ecolens-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: ./apps/api
+    healthCheckPath: /health
+    autoDeploy: false
+    envVars:
+      - key: ECOLENS_MOCK_MODE
+        value: "true"
+      - key: ENVIRONMENT
+        value: production
+      - key: MAX_IMAGE_BYTES
+        value: "10485760"
+      - key: ANALYSIS_TIMEOUT_SECONDS
+        value: "20"
+      - key: GEMINI_MODEL
+        value: gemini-3.6-flash
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: scan-images
+      - key: CORS_ORIGINS
+        sync: false
