@@ -123,7 +123,7 @@ function parseIdentification(value: unknown, path: string): ScanIdentification {
   );
   const parsed: ScanIdentification = {
     name: stringAt(item.name, `${path}.name`, 1),
-    category: enumAt<ScanCategory>(item.category, ['food', 'packaged_food', 'plant', 'mushroom', 'unknown'], `${path}.category`),
+    category: enumAt<ScanCategory>(item.category, ['food', 'packaged_food', 'plant', 'mushroom', 'hazardous_nonfood', 'unknown'], `${path}.category`),
     confidence: numberAt(item.confidence, `${path}.confidence`, 0, 1),
     confidence_label: enumAt<ConfidenceLabel>(item.confidence_label, ['high', 'moderate', 'low'], `${path}.confidence_label`),
     evidence: stringArrayAt(item.evidence, `${path}.evidence`, { max: 5 }),
@@ -141,13 +141,16 @@ function parseIdentification(value: unknown, path: string): ScanIdentification {
 
 function parseSafety(value: unknown, path: string): ScanSafety {
   const item = objectAt(value, path);
-  assertKeys(item, ['risk_level', 'headline', 'warnings', 'do_not_consume'], ['emergency_guidance'], path);
+  assertKeys(item, ['risk_level', 'headline', 'warnings', 'do_not_consume'], ['never_consumable', 'emergency_guidance'], path);
   const parsed: ScanSafety = {
     risk_level: enumAt<RiskLevel>(item.risk_level, ['low', 'caution', 'high', 'unknown'], `${path}.risk_level`),
     headline: stringAt(item.headline, `${path}.headline`),
     warnings: stringArrayAt(item.warnings, `${path}.warnings`, { min: 1 }),
     do_not_consume: booleanAt(item.do_not_consume, `${path}.do_not_consume`),
   };
+  if (Object.prototype.hasOwnProperty.call(item, 'never_consumable')) {
+    parsed.never_consumable = booleanAt(item.never_consumable, `${path}.never_consumable`);
+  }
   if (Object.prototype.hasOwnProperty.call(item, 'emergency_guidance')) {
     parsed.emergency_guidance = nullableStringAt(item.emergency_guidance, `${path}.emergency_guidance`);
   }

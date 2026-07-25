@@ -107,9 +107,12 @@ Run from `apps/api` and verify:
 
 - [ ] Confidence labels follow the implemented thresholds: high ≥0.85, moderate ≥0.65, low <0.65.
 - [ ] Every plant scan is expert-review/do-not-consume and has no recipes.
-- [ ] Every mushroom scan is high-risk, expert-review, do-not-consume, `needs_review`, and has no recipes.
-- [ ] Low-confidence scans become unknown-risk, expert-review, do-not-consume, and have no recipes.
+- [ ] Every mushroom scan is high-risk, never-consumable, do-not-consume, `needs_review`, and has no recipes.
+- [ ] Every hazardous-nonfood scan is high-risk, never-consumable, do-not-consume, `needs_review`, has no recipes, and does **not** carry an expert-review badge.
+- [ ] Low-confidence scans become expert-review, do-not-consume, and have no recipes, with risk raised to at least unknown — never downgraded from high.
 - [ ] Unknown category scans are do-not-consume, expert-review, `needs_review`, and have no recipes.
+- [ ] Never-consumable copy states the item must not be eaten and does not offer expert verification as a path to consuming it.
+- [ ] A recognizable hazard is never reported as unknown-risk or as merely needing review.
 - [ ] High/unknown-risk or existing do-not-consume scans cannot retain recipes.
 - [ ] `chat_available` is false whenever do-not-consume is true, confidence is below 0.65, or expert verification is required.
 - [ ] Direct `/chat` use on a non-chat-eligible scan returns the fixed safety notice without provider permission to consume.

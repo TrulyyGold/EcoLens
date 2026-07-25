@@ -49,6 +49,13 @@ class MockAnalysisAdapter:
 
         if any(word in topic for word in ("safe", "safety", "eat", "danger", "risk", "poison", "toxic")):
             warnings = "; ".join(scan.safety.warnings) if scan.safety.warnings else "no specific warnings were logged for this scan"
+            # Checked first: a never-consumable item gets a definite answer, not a
+            # suggestion to check with an expert who could not clear it anyway.
+            if scan.safety.never_consumable:
+                return (
+                    f"{scan.safety.headline}. {warnings}. This is not a case of needing a "
+                    "second opinion — it should not be eaten at all."
+                )
             if wild:
                 return (
                     f"{scan.safety.headline}. {warnings}. A photo genuinely cannot rule out a toxic "
@@ -75,6 +82,13 @@ class MockAnalysisAdapter:
                 titles = ", ".join(r.title for r in scan.recipes[:3])
                 return f"A couple of ideas already on this scan: {titles}. Open the Recipes tab for the full ingredients and steps."
             return "No recipes here — that's intentional for wild finds, low-confidence matches, or anything flagged with a safety concern."
+
+        if scan.safety.never_consumable:
+            return (
+                f"This scan identified {scan.identification.name} at "
+                f"{confidence_pct}% confidence, and it is not something that can be "
+                "eaten. Ask me about the evidence or the safety notes on this scan."
+            )
 
         if wild:
             return (
@@ -205,10 +219,13 @@ def _mushroom() -> AnalysisDraft:
             "safe identification."
         ),
         safety=Safety(
-            risk_level=RiskLevel.CAUTION,
-            headline="Wild mushroom requires expert identification",
+            # States its own severity rather than relying on the server's category
+            # rule to rescue it; the deterministic rule is a backstop, not a crutch.
+            risk_level=RiskLevel.HIGH,
+            headline="Potentially poisonous wild mushroom",
             warnings=["Toxic mushroom species can closely resemble edible species."],
-            do_not_consume=False,
+            do_not_consume=True,
+            never_consumable=True,
             emergency_guidance=(
                 "If ingestion may have occurred, contact local emergency services or "
                 "poison control promptly."
@@ -289,8 +306,63 @@ def _doritos() -> AnalysisDraft:
     )
 
 
+def _bleach() -> AnalysisDraft:
+    """Household chemical fixture: recognizable, and recognizably not food.
+
+    Guards the regression where a known hazard surfaced as "unknown risk" with a
+    "needs review" mark because no category fit it and the server overwrote the
+    provider's high-risk call.
+    """
+
+    return AnalysisDraft(
+        identification=Identification(
+            name="Concentrated regular bleach",
+            scientific_name=None,
+            brand="Clorox",
+            category=Category.HAZARDOUS_NONFOOD,
+            confidence=0.98,
+            confidence_label=ConfidenceLabel.HIGH,
+            evidence=[
+                "Clorox wordmark on an opaque white jug",
+                "'Concentrated' and 'Regular Bleach' label text",
+                "Ribbed handle typical of liquid bleach packaging",
+            ],
+            alternatives=[],
+            requires_expert_verification=False,
+        ),
+        description=(
+            "A jug of household chlorine bleach photographed on a kitchen counter. "
+            "It is a cleaning product, not a beverage, despite sitting beside a glass "
+            "of water."
+        ),
+        safety=Safety(
+            risk_level=RiskLevel.HIGH,
+            headline="Not safe to eat — do not consume this",
+            warnings=[
+                "Sodium hypochlorite is corrosive and can cause serious internal injury "
+                "if swallowed.",
+                "Never decant bleach into a cup, bottle, or other drink container.",
+                "Mixing bleach with ammonia or acidic cleaners releases toxic gas.",
+            ],
+            do_not_consume=True,
+            never_consumable=True,
+            emergency_guidance=(
+                "If anyone has swallowed this, contact poison control or local emergency "
+                "services now and follow their instructions."
+            ),
+        ),
+        nutrition=None,
+        recipes=[],
+        facts=[
+            "Household bleach is typically a 5-9% sodium hypochlorite solution.",
+            "Bleach degrades over time, which is why containers carry a production date.",
+        ],
+    )
+
+
 _SCENARIOS = {
     DemoScenario.BANANA: _banana(),
     DemoScenario.MUSHROOM: _mushroom(),
     DemoScenario.DORITOS: _doritos(),
+    DemoScenario.BLEACH: _bleach(),
 }

@@ -48,17 +48,28 @@ The scan contract carries several signals because no one number is sufficient:
 - `requires_expert_verification`
 - safety `risk_level`: `low`, `caution`, `high`, or `unknown`
 - `do_not_consume`
+- `never_consumable`
 
 ### Interpretation rules
 
 - Numeric confidence is a model signal, **not a validated probability of correctness** unless a future evaluation establishes calibration.
 - `high` confidence does not override category risk, missing context, warnings, or expert verification.
-- `unknown` is a legitimate safety outcome, not an error to hide.
-- The service can escalate risk/review/do-not-consume state after provider output and does not lower provider risk or clear a provider do-not-consume flag; it may replace headlines and filter text that matches its medical-advice patterns.
+- `unknown` is a legitimate safety outcome for a genuinely ambiguous item, not an error to hide. It is **not** an acceptable label for a recognizable hazard: reporting "unknown risk" on identifiable bleach is a safety failure, not caution.
+- Identification certainty and hazard certainty are independent. A low-confidence *identification* does not imply low certainty about danger, and the two are recorded separately.
+- The service escalates risk/review/do-not-consume state after provider output and never lowers provider risk or clears a provider do-not-consume flag. Risk is combined by severity (`low` < `caution` < `unknown` < `high`) via `escalate_risk`, so a category or confidence rule can raise a risk level but never reduce one the provider already reported. It may replace headlines and filter text that matches its medical-advice patterns.
 - The UI shows the confidence label and review state near the identity; numeric confidence is secondary.
 - Alternatives should be concrete enough to explain ambiguity but must not become a choose-your-own-edibility list.
 
-The implemented confidence labels are deterministic: `high` at `>=0.85`, `moderate` at `>=0.65` and `<0.85`, and `low` below `0.65`. Confidence below `0.65` also forces unknown risk, expert verification, do-not-consume, `needs_review`, no recipes, and `chat_available=false`. These thresholds are policy constants, not evidence that confidence is calibrated; production calibration remains future work.
+### `do_not_consume` vs `never_consumable`
+
+These are deliberately distinct, because the honest user-facing sentence differs:
+
+- `do_not_consume` alone — the item is blocked **pending verification**. An unidentified berry qualifies: a qualified expert genuinely could clear it. Copy offers the expert-verification path.
+- `never_consumable` — **no** verification can make the item consumable. Non-food substances and all wild mushrooms qualify. Copy must state plainly that the item is not to be eaten and must **not** mention expert review, which would imply a path to eating it that does not exist.
+
+Setting `never_consumable` always implies `do_not_consume` and escalates risk to `high`. Headline selection in `_safe_headline` checks `never_consumable` first for this reason.
+
+The implemented confidence labels are deterministic: `high` at `>=0.85`, `moderate` at `>=0.65` and `<0.85`, and `low` below `0.65`. Confidence below `0.65` also forces expert verification, do-not-consume, `needs_review`, no recipes, and `chat_available=false`, and raises risk to at least `unknown` — but it no longer overwrites a `high` risk level, so a blurry photo of a known hazard still reports `high`. These thresholds are policy constants, not evidence that confidence is calibrated; production calibration remains future work.
 
 ## 4. Deterministic policy matrix
 
@@ -67,9 +78,11 @@ The live server first parses provider JSON into strict Pydantic models and then 
 | Implemented condition | Canonical server posture | Recipes | Chat |
 |---|---|---|---|
 | Category `plant` | Expert verification, do-not-consume, at least caution risk, `needs_review` | Removed | `chat_available=false` |
-| Category `mushroom` | Expert verification, high risk, do-not-consume, `needs_review` | Removed | `chat_available=false` |
-| Category `unknown` | Expert verification, unknown risk, do-not-consume, `needs_review` | Removed | `chat_available=false` |
-| Confidence `<0.65` | Low label, expert verification, unknown risk, do-not-consume, `needs_review` | Removed | `chat_available=false` |
+| Category `mushroom` | Expert verification, at least high risk, do-not-consume, **`never_consumable`**, `needs_review` | Removed | `chat_available=false` |
+| Category `hazardous_nonfood` | At least high risk, do-not-consume, **`never_consumable`**, `needs_review`; expert verification is explicitly **not** set because the item is identified and known inedible | Removed | `chat_available=false` |
+| Category `unknown` | Expert verification, at least unknown risk, do-not-consume, `needs_review` | Removed | `chat_available=false` |
+| Confidence `<0.65` | Low label, expert verification, at least unknown risk (never a downgrade from `high`), do-not-consume, `needs_review` | Removed | `chat_available=false` |
+| `never_consumable=true` | Forces do-not-consume and at least high risk; headline and chat notice state the item must not be eaten without offering verification | Removed | `chat_available=false` |
 | Provider high/unknown risk or do-not-consume | Expert review / `needs_review`; deterministic high-risk warning is added (medical-pattern text may be filtered) | Removed | `chat_available=false` through expert/do-not-consume state |
 | `requires_expert_verification=true` | `needs_review` | Removed | `chat_available=false` |
 | Caution alone, with no other blocker | Caution remains prominent | May remain | May be true when confidence is at least `0.65` |
@@ -77,15 +90,24 @@ The live server first parses provider JSON into strict Pydantic models and then 
 
 ### Implemented recipe gates
 
-The API removes or suppresses recipes for plant, mushroom, or unknown categories; confidence below `0.65`; expert-verification; or do-not-consume. Provider high/unknown risk is converted into expert-review handling, so those scans are also blocked even when the provider did not set do-not-consume. The mobile additionally suppresses recipes for wild plant/mushroom, `needs_review`, expert-verification, high/unknown risk, or do-not-consume.
+The API removes or suppresses recipes for plant, mushroom, hazardous-nonfood, or unknown categories; confidence below `0.65`; expert-verification; do-not-consume; or never-consumable. Provider high/unknown risk is converted into expert-review handling, so those scans are also blocked even when the provider did not set do-not-consume. The mobile additionally suppresses recipes for wild plant/mushroom, hazardous nonfood, `needs_review`, expert-verification, high/unknown risk, or do-not-consume.
 
 A `caution` label by itself is **not** a recipe blocker in the current code. The mobile Package fixture intentionally demonstrates caution with an otherwise eligible stored recipe. A future policy may become stricter, but documentation must not claim that stricter rule is shipped.
 
 ## 5. Category-specific posture
 
+### Hazardous non-food
+
+- Cleaning products, bleach, solvents, detergent, batteries, medications, cosmetics, fuel, and pesticides are classified `hazardous_nonfood`, **not** `unknown`. The item is recognized; what makes it notable is that it is not food.
+- These scans are `never_consumable`. State plainly that the item must not be eaten. Do not soften this with review or verification language.
+- Do **not** set `requires_expert_verification`. Nothing about the identification is unresolved, and an expert-review badge on a bleach bottle misrepresents confident knowledge as doubt.
+- Household context does not reduce risk: a chemical photographed on a kitchen counter beside a drinking glass is still a chemical, and the proximity is a reason for a *stronger* warning about decanting into drink containers.
+- Emergency guidance routes to poison control or emergency services and deliberately gives **no** first-aid instruction (including whether to induce vomiting), which would cross the medical-advice boundary in §1.
+
 ### Mushrooms
 
 - Vision-only identification never establishes edibility.
+- Wild mushrooms are `never_consumable`. Because no expert consultation makes a photo-identified wild mushroom edible, the copy must not present expert verification as a route to eating it. Recommending a local expert for *identification* remains appropriate; implying that identification unlocks consumption does not.
 - Do not provide tasting, cooking, preparation, dosage, or “look-alike test” instructions.
 - Do not imply that cooking neutralizes toxins.
 - Show plausible alternatives only to explain uncertainty.
@@ -226,6 +248,11 @@ The MVP does **not** authenticate callers, validate ownership, or provide genera
 | “No issue is apparent in this photo; that does not establish safety” | “Safe” |
 | “Do not consume based on this scan” | “Probably fine” |
 | “From visible label / Estimate / General reference” | Unqualified nutrition numbers |
+| “This is not food and must not be eaten” (known hazard) | “Unknown risk” / “Needs review” |
+| “High risk” on a recognizable hazard | “Unknown risk” as a hedge |
+| “No expert consultation makes this safe to eat” | “Only eat with expert guidance” |
+
+Hedging is not the same as caution. Under-stating a known hazard so the output *sounds* careful is a safety failure in its own right: a user who reads “unknown risk” on a bleach bottle has been given less information than they arrived with. Calibrate the wording to the evidence — decisive where the hazard is certain, genuinely uncertain only where the item itself is unresolved.
 | “Seek qualified local verification” | “Ask someone who knows plants” |
 
 Avoid gamified confidence, celebratory animation on a safety-sensitive identification, and visual treatment that makes recipes more prominent than warnings.
@@ -266,7 +293,9 @@ Mobile tests cover:
 - local Mushroom recipe suppression without an API call; and
 - fixture safety presentation, including Mushroom `recipes=[]` and `chat_available=false`.
 
-There are no automated screen-rendering tests for the Journal replay, visible demo labels, blocked recipe panel, or absence of the Mushroom chat action; those are manual checks in the demo runbook/checklist. There is also no implemented blurred-label, spoilage, unknown-object, multi-item, dark-image, printed-prompt-injection, multi-turn jailbreak, or comprehensive exposure-language suite. Do not imply those cases passed.
+There are no automated screen-rendering tests for the Journal replay, visible demo labels, blocked recipe panel, or absence of the Mushroom chat action; those are manual checks in the demo runbook/checklist. There is also no implemented blurred-label, spoilage, multi-item, dark-image, printed-prompt-injection, multi-turn jailbreak, or comprehensive exposure-language suite. Do not imply those cases passed.
+
+Risk-escalation behavior *is* covered: `test_escalate_risk_never_downgrades_severity`, `test_low_confidence_does_not_downgrade_a_high_risk_finding`, `test_never_consumable_headline_offers_no_verification_path`, and `test_unknown_category_still_reads_as_uncertain` in `apps/api/tests/test_safety_and_timeouts.py`, plus `test_hazardous_nonfood_is_definite_not_unknown` in `test_api.py`. The mobile presentation copy is covered in `apps/mobile/src/__tests__/safety.test.ts`. These assert both directions: hazards must read decisively, and genuinely unidentified items must still read as uncertain.
 
 ### Optional evaluation before production — not shipped
 

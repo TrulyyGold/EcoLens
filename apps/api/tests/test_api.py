@@ -39,6 +39,7 @@ def test_health_is_runnable_without_credentials(client: TestClient) -> None:
         ("banana", "Banana", "food"),
         ("mushroom", "Possible field mushroom", "mushroom"),
         ("doritos", "Nacho Cheese flavored tortilla chips", "packaged_food"),
+        ("bleach", "Concentrated regular bleach", "hazardous_nonfood"),
     ],
 )
 def test_all_demo_scenarios_match_contract(
@@ -83,7 +84,37 @@ def test_mushroom_policy_forces_warning_and_removes_recipes(
     assert payload["identification"]["requires_expert_verification"] is True
     assert payload["recipes"] == []
     assert payload["chat_available"] is False
-    assert any("Never eat a wild mushroom" in warning for warning in payload["safety"]["warnings"])
+    assert payload["safety"]["never_consumable"] is True
+    assert any(
+        "not safe to eat based on a photo" in warning
+        for warning in payload["safety"]["warnings"]
+    )
+    # The headline must not dangle expert verification as a route to eating it.
+    assert "without expert verification" not in payload["safety"]["headline"]
+
+
+def test_hazardous_nonfood_is_definite_not_unknown(
+    client: TestClient,
+    png_bytes: bytes,
+) -> None:
+    """A recognizable chemical must never surface as merely uncertain.
+
+    Regression test for bleach reporting "unknown risk" with an expert-review
+    badge, which read as indecision about an obvious hazard.
+    """
+
+    payload = analyze(client, png_bytes, "bleach").json()
+
+    assert payload["safety"]["risk_level"] == "high"
+    assert payload["safety"]["never_consumable"] is True
+    assert payload["safety"]["do_not_consume"] is True
+    assert payload["identification"]["category"] == "hazardous_nonfood"
+    # Nothing here is unresolved: the item is known, and known to be inedible.
+    assert payload["safety"]["risk_level"] != "unknown"
+    assert payload["identification"]["requires_expert_verification"] is False
+    assert payload["recipes"] == []
+    assert payload["chat_available"] is False
+    assert "expert" not in payload["safety"]["headline"].lower()
 
 
 def test_history_and_scan_lookup(client: TestClient, png_bytes: bytes) -> None:

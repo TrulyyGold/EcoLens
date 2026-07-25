@@ -119,6 +119,10 @@ export function ResultScreen({ navigation, route }: Props): React.JSX.Element {
   const favorite = isFavorite(result.scan_id);
   const fallbackCopy = fallbackExplanation(outcome);
   const displayImageUri = result.image_url ?? route.params.image?.uri;
+  const neverConsumable =
+    result.safety.never_consumable === true ||
+    result.identification.category === 'hazardous_nonfood' ||
+    result.identification.category === 'mushroom';
 
   const nutritionDetail = useMemo(() => {
     if (!result.nutrition || result.nutrition.basis === 'unavailable') return 'No verified values available';
@@ -197,9 +201,18 @@ export function ResultScreen({ navigation, route }: Props): React.JSX.Element {
           </View>
         </View>
         <View style={styles.badgeRow}>
-          <Badge label={result.status.replace('_', ' ')} tone={result.status === 'complete' ? 'green' : 'amber'} />
+          {/*
+            A confirmed hazard reads as "Not safe to eat" rather than the raw
+            "needs review" status, which understates a known danger. Expert
+            review is only surfaced where an expert could actually change the
+            answer — never for non-food or wild mushrooms.
+          */}
+          <Badge
+            label={neverConsumable ? 'Not safe to eat' : result.status.replace('_', ' ')}
+            tone={neverConsumable ? 'red' : result.status === 'complete' ? 'green' : 'amber'}
+          />
           <Badge label={`${result.safety.risk_level} risk`} tone={riskTone(result.safety.risk_level)} />
-          {result.identification.requires_expert_verification ? <Badge label="Expert review" tone="red" /> : null}
+          {result.identification.requires_expert_verification && !neverConsumable ? <Badge label="Expert review" tone="red" /> : null}
         </View>
         <Text style={styles.timestamp}>{formatDiscoveryDate(result.created_at)} · {formatDiscoveryTime(result.created_at)}</Text>
         <View style={styles.confidence}><ConfidenceMeter confidence={result.identification.confidence} label={result.identification.confidence_label} /></View>

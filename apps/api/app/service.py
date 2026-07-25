@@ -26,7 +26,7 @@ from app.safety import (
 )
 
 # Kept here to avoid coupling the service to one provider implementation.
-PROMPT_VERSION = "2026-03-ecolens-v1"
+PROMPT_VERSION = "2026-07-ecolens-v2"
 UTC = timezone.utc  # noqa: UP017
 
 
@@ -130,10 +130,18 @@ class EcoLensService:
             return MEDICAL_BOUNDARY, MEDICAL_BOUNDARY
 
         if not scan.chat_available:
-            notice = (
-                "This scan requires expert verification. Do not consume the item based on "
-                "this result."
-            )
+            # Never-consumable scans get a definite answer; only genuinely
+            # unverified ones are pointed at expert verification.
+            if scan.safety.never_consumable:
+                notice = (
+                    "This item is not food and must not be eaten. Follow-up chat is "
+                    "disabled for it."
+                )
+            else:
+                notice = (
+                    "This scan requires expert verification. Do not consume the item based "
+                    "on this result."
+                )
             return notice, notice
 
         operation_adapter = (
@@ -161,10 +169,17 @@ class EcoLensService:
     ) -> GenerateRecipeResponse:
         scan = await self.get_scan(scan_id)
         should_suppress = (
-            scan.identification.category in {Category.PLANT, Category.MUSHROOM, Category.UNKNOWN}
+            scan.identification.category
+            in {
+                Category.PLANT,
+                Category.MUSHROOM,
+                Category.HAZARDOUS_NONFOOD,
+                Category.UNKNOWN,
+            }
             or scan.identification.confidence < 0.65
             or scan.identification.requires_expert_verification
             or scan.safety.do_not_consume
+            or scan.safety.never_consumable
         )
         if should_suppress:
             return GenerateRecipeResponse(
