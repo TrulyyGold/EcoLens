@@ -23,6 +23,11 @@ HAZARDOUS_NONFOOD_WARNING = (
 NEVER_CONSUMABLE_WARNING = (
     "No amount of expert verification makes this item safe to eat."
 )
+MEDICAL_BOUNDARY = (
+    "EcoLens cannot diagnose, treat, or provide medical advice. If someone may have "
+    "eaten a harmful item or has symptoms, contact local emergency services or poison "
+    "control now."
+)
 
 # Ordered least to most severe. Safety state may only ever move up this scale.
 _RISK_SEVERITY: dict[str, int] = {
@@ -46,11 +51,7 @@ def escalate_risk(current: RiskLevel | str, floor: RiskLevel | str) -> str:
     current_rank = _RISK_SEVERITY.get(current, 0)
     floor_rank = _RISK_SEVERITY.get(floor, 0)
     return str(current if current_rank >= floor_rank else floor)
-MEDICAL_BOUNDARY = (
-    "EcoLens cannot diagnose, treat, or provide medical advice. If someone may have "
-    "eaten a harmful item or has symptoms, contact local emergency services or poison "
-    "control now."
-)
+
 
 _MEDICAL_REQUEST = re.compile(
     r"\b(diagnos(?:e|is)|dose|dosage|prescri(?:be|ption)|medication|medicine|"
