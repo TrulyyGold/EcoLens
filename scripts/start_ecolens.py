@@ -3,10 +3,15 @@
 scripts/start_ecolens.py
 
 One-command launcher for the EcoLens backend (FastAPI/uvicorn) and the
-Expo mobile app. Auto-detects this machine's LAN IP and keeps
+Expo mobile app. On first run it sets everything up automatically:
+
+    - creates apps/api/.venv and installs the API package (pip install -e .[dev])
+    - creates apps/api/.env and apps/mobile/.env from their .env.example files
+    - runs `npm ci` in apps/mobile if node_modules is missing
+
+On every run it also auto-detects this machine's LAN IP and keeps
 apps/mobile/.env in sync (EXPO_PUBLIC_API_URL) so a phone running Expo Go
-can always reach the API - even after Wi-Fi reconnects and the IP
-changes.
+can always reach the API - even after Wi-Fi reconnects and the IP changes.
 
 Usage (run from anywhere inside the repo):
 
@@ -23,16 +28,14 @@ Common options:
     --port 8000           API port (default: 8000)
     --separate-windows    Open each process in its own terminal window
                           instead of streaming both into this one
-    --skip-env-sync       Don't touch apps/mobile/.env
+    --skip-env-sync       Don't touch apps/mobile/.env's EXPO_PUBLIC_API_URL
+    --no-setup            Don't auto-install anything; fail with instructions
+                          if .venv / node_modules are missing (old behavior)
     -h, --help            Show all options
 
 Default behavior runs both processes in THIS terminal with output
 prefixed "[api]" / "[mobile]", and shuts both down cleanly on Ctrl+C.
 Pass --separate-windows if you'd rather have two terminal windows.
-
-Requirements (see README "Quick start" for full setup):
-    - apps/api/.venv            (python3 -m venv .venv && pip install -e '.[dev]')
-    - apps/mobile/node_modules  (npm ci)
 """
 
 from __future__ import annotations
@@ -66,6 +69,113 @@ def find_repo_root(start: Path) -> Path:
     )
 
 
+def run_step(cmd: list[str], cwd: Path, label: str) -> None:
+    """Run a setup command, streaming its output, and exit with a clear
+    message if it fails instead of a raw traceback."""
+    print(f"[setup] {label}...")
+    try:
+        subprocess.run(cmd, cwd=str(cwd), check=True)
+    except FileNotFoundError as e:
+        sys.exit(f"[setup] Failed: could not find '{cmd[0]}' ({e}). Is it installed and on your PATH?")
+    except subprocess.CalledProcessError as e:
+        sys.exit(f"[setup] Failed: '{label}' exited with status {e.returncode}. See output above for details.")
+
+
+def copy_env_example(target_dir: Path) -> None:
+    env_path = target_dir / ".env"
+    example_path = target_dir / ".env.example"
+    if env_path.exists():
+        return
+    if example_path.exists():
+        env_path.write_text(example_path.read_text(encoding="utf-8"), encoding="utf-8")
+        print(f"[setup] Created {target_dir.name}/.env from .env.example")
+    else:
+        env_path.write_text("", encoding="utf-8")
+
+
+# --------------------------------------------------------------------------
+# API setup
+# --------------------------------------------------------------------------
+
+def venv_python_path(api_dir: Path) -> Path:
+    windows_python = api_dir / ".venv" / "Scripts" / "python.exe"
+    posix_python = api_dir / ".venv" / "bin" / "python"
+    return windows_python if sys.platform.startswith("win") else posix_python
+
+
+def ensure_api_setup(api_dir: Path, no_setup: bool) -> Path:
+    """Return a working venv Python, creating the venv and installing
+    dependencies first if needed."""
+    venv_python = venv_python_path(api_dir)
+
+    if venv_python.exists():
+        copy_env_example(api_dir)
+        return venv_python
+
+    if no_setup:
+        sys.exit(
+            "Could not find apps/api/.venv. Set it up first (or drop --no-setup to let this "
+            "script do it for you):\n"
+            "  cd apps/api\n"
+            "  python -m venv .venv\n"
+            "  " + (r".venv\Scripts\activate" if sys.platform.startswith("win") else ". .venv/bin/activate") + "\n"
+            "  pip install -e .[dev]\n"
+            "  cp .env.example .env"
+        )
+
+    print("[setup] apps/api/.venv not found - setting up the API environment now (one-time, may take a minute)...")
+    run_step([sys.executable, "-m", "venv", ".venv"], api_dir, "Creating virtual environment")
+
+    if not venv_python.exists():
+        sys.exit(f"[setup] Failed: expected {venv_python} to exist after creating the venv, but it doesn't.")
+
+    run_step([str(venv_python), "-m", "pip", "install", "--upgrade", "pip"], api_dir, "Upgrading pip")
+    run_step([str(venv_python), "-m", "pip", "install", "-e", ".[dev]"], api_dir, "Installing API dependencies")
+    copy_env_example(api_dir)
+    print("[setup] API environment ready.")
+    return venv_python
+
+
+# --------------------------------------------------------------------------
+# Mobile setup
+# --------------------------------------------------------------------------
+
+def find_npm() -> str:
+    """Locate npm, accounting for npm.cmd on Windows."""
+    npm = shutil.which("npm")
+    if npm is None:
+        sys.exit(
+            "Could not find npm on your PATH. Install Node.js 20+ from "
+            "https://nodejs.org and re-open your terminal."
+        )
+    return npm
+
+
+def ensure_mobile_setup(mobile_dir: Path, no_setup: bool) -> None:
+    if (mobile_dir / "node_modules").exists():
+        copy_env_example(mobile_dir)
+        return
+
+    if no_setup:
+        sys.exit(
+            "Could not find apps/mobile/node_modules. Set it up first (or drop --no-setup to "
+            "let this script do it for you):\n"
+            "  cd apps/mobile\n"
+            "  npm ci\n"
+            "  cp .env.example .env"
+        )
+
+    print("[setup] apps/mobile/node_modules not found - installing packages now (one-time, may take a minute)...")
+    npm = find_npm()
+    run_step([npm, "ci"], mobile_dir, "Installing mobile app dependencies (npm ci)")
+    copy_env_example(mobile_dir)
+    print("[setup] Mobile environment ready.")
+
+
+# --------------------------------------------------------------------------
+# LAN IP + .env sync
+# --------------------------------------------------------------------------
+
 def get_lan_ip(override: str | None) -> str:
     """Best-effort detection of this machine's LAN IP (not 127.0.0.1)."""
     if override:
@@ -92,15 +202,7 @@ def get_lan_ip(override: str | None) -> str:
 def sync_mobile_env(mobile_dir: Path, ip: str, port: int) -> None:
     """Ensure apps/mobile/.env points EXPO_PUBLIC_API_URL at the current LAN IP."""
     env_path = mobile_dir / ".env"
-    example_path = mobile_dir / ".env.example"
-
-    if not env_path.exists():
-        if example_path.exists():
-            env_path.write_text(example_path.read_text(encoding="utf-8"), encoding="utf-8")
-        else:
-            env_path.write_text("", encoding="utf-8")
-
-    content = env_path.read_text(encoding="utf-8")
+    content = env_path.read_text(encoding="utf-8") if env_path.exists() else ""
     new_line = f"EXPO_PUBLIC_API_URL=http://{ip}:{port}"
 
     if "EXPO_PUBLIC_API_URL=" in content:
@@ -110,45 +212,6 @@ def sync_mobile_env(mobile_dir: Path, ip: str, port: int) -> None:
 
     env_path.write_text(content, encoding="utf-8")
     print(f"[env] apps/mobile/.env -> {new_line}")
-
-
-def find_venv_python(api_dir: Path) -> Path:
-    """Locate the API's virtualenv Python, on Windows or POSIX."""
-    windows_python = api_dir / ".venv" / "Scripts" / "python.exe"
-    posix_python = api_dir / ".venv" / "bin" / "python"
-    if windows_python.exists():
-        return windows_python
-    if posix_python.exists():
-        return posix_python
-    sys.exit(
-        "Could not find apps/api/.venv. Set it up first:\n"
-        "  cd apps/api\n"
-        "  python3 -m venv .venv\n"
-        "  " + (r".venv\Scripts\activate" if sys.platform.startswith("win") else ". .venv/bin/activate") + "\n"
-        "  pip install -e '.[dev]'\n"
-        "  cp .env.example .env"
-    )
-
-
-def find_npm() -> str:
-    """Locate npm, accounting for npm.cmd on Windows."""
-    npm = shutil.which("npm")
-    if npm is None:
-        sys.exit(
-            "Could not find npm on your PATH. Install Node.js 20+ from "
-            "https://nodejs.org and re-open your terminal."
-        )
-    return npm
-
-
-def check_mobile_deps(mobile_dir: Path) -> None:
-    if not (mobile_dir / "node_modules").exists():
-        sys.exit(
-            "Could not find apps/mobile/node_modules. Set it up first:\n"
-            "  cd apps/mobile\n"
-            "  npm ci\n"
-            "  cp .env.example .env"
-        )
 
 
 # --------------------------------------------------------------------------
@@ -186,10 +249,10 @@ def run_inline(jobs: list[tuple[list[str], Path, str]]) -> None:
     except KeyboardInterrupt:
         print("\n[shutdown] Stopping servers...")
     finally:
-        for proc, prefix in processes:
+        for proc, _ in processes:
             if proc.poll() is None:
                 proc.terminate()
-        for proc, prefix in processes:
+        for proc, _ in processes:
             try:
                 proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
@@ -242,7 +305,7 @@ def run_separate_windows(jobs: list[tuple[list[str], Path, str]], root: Path) ->
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Launch the EcoLens API and/or Expo app.",
+        description="Set up (if needed) and launch the EcoLens API and/or Expo app.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     mode = parser.add_mutually_exclusive_group()
@@ -260,6 +323,11 @@ def parse_args() -> argparse.Namespace:
         help="Open each process in its own terminal window instead of streaming both here",
     )
     parser.add_argument("--skip-env-sync", action="store_true", help="Don't touch apps/mobile/.env")
+    parser.add_argument(
+        "--no-setup",
+        action="store_true",
+        help="Don't auto-install anything; fail with manual instructions if .venv/node_modules are missing",
+    )
     return parser.parse_args()
 
 
@@ -279,7 +347,7 @@ def main() -> None:
     jobs: list[tuple[list[str], Path, str]] = []
 
     if run_api:
-        venv_python = find_venv_python(api_dir)
+        venv_python = ensure_api_setup(api_dir, args.no_setup)
         api_cmd = [
             str(venv_python),
             "-m",
@@ -294,7 +362,7 @@ def main() -> None:
         jobs.append((api_cmd, api_dir, "api"))
 
     if run_mobile:
-        check_mobile_deps(mobile_dir)
+        ensure_mobile_setup(mobile_dir, args.no_setup)
         print(f"[net] Using LAN IP: {ip}")
         if not args.skip_env_sync:
             sync_mobile_env(mobile_dir, ip, args.port)
