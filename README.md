@@ -39,27 +39,27 @@ Most visual search tools stop at a label. EcoLens is designed around the decisio
 - Optional: a Gemini API key for live analysis
 - Optional: a Supabase project for durable history and private image storage
 
-The two apps only need to be set up **once**; after that, use the one-command launcher below (or the manual two-terminal steps) to start them on any given day.
+### One command: setup + start
 
-### One-time setup
+From the repo root, with Python and Node installed:
 
 ```bash
-# Backend
-cd apps/api
-python3 -m venv .venv
-source .venv/bin/activate      # Windows: .venv\Scripts\activate
-pip install -e '.[dev]'
-cp .env.example .env
-cd ../..
-
-# Mobile app
-cd apps/mobile
-npm ci
-cp .env.example .env
-cd ../..
+python scripts/start_ecolens.py
 ```
 
-The checked-in default is deterministic **mock mode**, so no credentials are required to run the demo. For live analysis, set in `apps/api/.env`:
+The first time you run it, it sets everything up automatically:
+
+- Creates `apps/api/.venv` and installs the API package (`pip install -e .[dev]`)
+- Creates `apps/api/.env` and `apps/mobile/.env` from their `.env.example` files
+- Runs `npm ci` in `apps/mobile` if `node_modules` is missing
+
+Then, every time (first run or not), it:
+
+- Detects your machine's LAN IP and writes it into `apps/mobile/.env` as `EXPO_PUBLIC_API_URL`, so a physical phone on the same Wi-Fi network can always reach the API - even after your Wi-Fi reconnects and the IP changes.
+- Starts `uvicorn` (with auto-reload) and `npm start` together, streaming both processes' output into your current terminal, prefixed `[api]` / `[mobile]`.
+- Shuts both processes down cleanly on `Ctrl+C`.
+
+The checked-in default is deterministic **mock mode**, so no credentials are required to run the demo. For live analysis, set in `apps/api/.env` (created for you on first run):
 
 ```
 ECOLENS_MOCK_MODE=false
@@ -68,20 +68,6 @@ GEMINI_MODEL=gemini-3.6-flash
 ```
 
 Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` only after applying every SQL file in `apps/api/migrations/` in numeric order.
-
-### Every-day start: one command
-
-Once setup above is done, start both the API and the Expo dev server together:
-
-```bash
-python scripts/start_ecolens.py
-```
-
-This will:
-
-- Detect your machine's LAN IP and write it into `apps/mobile/.env` as `EXPO_PUBLIC_API_URL`, so a physical phone on the same Wi-Fi network can always reach the API - even after your Wi-Fi reconnects and the IP changes.
-- Start `uvicorn` (with auto-reload) and `npm start` together, streaming both processes' output into your current terminal, prefixed `[api]` / `[mobile]`.
-- Shut both processes down cleanly on `Ctrl+C`.
 
 Useful flags:
 
@@ -93,12 +79,29 @@ Useful flags:
 | `--ip 192.168.1.20`     | Manually set the LAN IP written to `.env` (see Troubleshooting below)        |
 | `--separate-windows`    | Open the API and Expo processes in their own terminal windows instead        |
 | `--skip-env-sync`       | Don't touch `apps/mobile/.env`                                                |
+| `--no-setup`            | Don't auto-install anything; fail with manual instructions if a dependency is missing |
 
 Run `python scripts/start_ecolens.py --help` for the full list.
 
-### Manual start (equivalent, two terminals)
+### Manual setup and start (equivalent, two terminals)
 
 If you'd rather run things by hand or need finer control:
+
+```bash
+# Backend
+cd apps/api
+python -m venv .venv
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -e .[dev]
+cp .env.example .env
+cd ../..
+
+# Mobile app
+cd apps/mobile
+npm ci
+cp .env.example .env
+cd ../..
+```
 
 ```bash
 # Terminal 1 - API
@@ -146,8 +149,9 @@ The canonical result contract is [`contracts/scan-result.schema.json`](contracts
     ```
   - On macOS, the first run may prompt an incoming-connections permission dialog for Python/uvicorn - allow it.
 - **The auto-detected LAN IP looks wrong** (e.g. you're on a VPN, or have multiple network adapters). Pass the right address explicitly: `python scripts/start_ecolens.py --ip 192.168.1.20`.
-- **`Could not find apps/api/.venv` or `node_modules`.** Run the one-time setup commands above for whichever app is missing.
+- **`Could not find apps/api/.venv` or `node_modules`.** This only happens with `--no-setup`; without that flag the script installs both automatically. If a fresh install fails partway through, delete the partial `apps/api/.venv` or `apps/mobile/node_modules` folder and rerun.
 - **`npm` not found.** Install Node.js 20+ from [nodejs.org](https://nodejs.org) and reopen your terminal.
+- **Setup fails partway through pip/npm install.** Re-run the command - both are safe to re-run. If it keeps failing, check the error output printed above the failure for the underlying pip/npm error (e.g. missing system build tools).
 - **No terminal windows appear with `--separate-windows` on Linux.** The script falls back to logging that process's output to a `.log` file in the repo root when it can't find a supported terminal emulator (`gnome-terminal`, `konsole`, `xterm`, etc.) - check there.
 
 ## Feature scope
