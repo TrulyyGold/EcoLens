@@ -15,7 +15,15 @@ export function Card({ children, style, tone = 'default' }: CardProps): React.JS
 const tones = StyleSheet.create({
   default: { backgroundColor: colors.white, borderColor: colors.line },
   soft: { backgroundColor: colors.cream, borderColor: colors.cream },
-  dark: { backgroundColor: colors.forest, borderColor: colors.forest },
+  dark: {
+    backgroundColor: colors.forest,
+    borderColor: colors.forest,
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.22,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
+  },
 });
 
 const styles = StyleSheet.create({
