@@ -32,32 +32,95 @@ class MockAnalysisAdapter:
         return _SCENARIOS[selected].model_copy(deep=True)
 
     async def chat(self, scan: ScanResult, message: str) -> str:
-        del message
-        if scan.identification.category in {Category.PLANT, Category.MUSHROOM}:
+        topic = message.lower()
+        wild = scan.identification.category in {Category.PLANT, Category.MUSHROOM}
+        confidence_pct = round(scan.identification.confidence * 100)
+
+        if any(word in topic for word in ("evidence", "why", "sure", "confiden", "how do you know")):
+            evidence = scan.identification.evidence
+            if evidence:
+                listed = "; ".join(evidence[:4])
+                return (
+                    f"I matched {scan.identification.name} at {confidence_pct}% confidence based on: "
+                    f"{listed}. That's a visual read from one photo, not a lab test, so treat it as a "
+                    "starting point rather than a final answer."
+                )
+            return f"I identified {scan.identification.name} at {confidence_pct}% confidence, but this scan didn't record specific visual evidence to point to."
+
+        if any(word in topic for word in ("safe", "safety", "eat", "danger", "risk", "poison", "toxic")):
+            warnings = "; ".join(scan.safety.warnings) if scan.safety.warnings else "no specific warnings were logged for this scan"
+            if wild:
+                return (
+                    f"{scan.safety.headline}. {warnings}. A photo genuinely cannot rule out a toxic "
+                    "look-alike here, so please don't eat this based on the scan alone — check with a "
+                    "qualified local expert first."
+                )
+            return f"{scan.safety.headline}. {warnings}. Worth a quick look-over before eating, even at {confidence_pct}% identification confidence."
+
+        if any(word in topic for word in ("nutrition", "calorie", "protein", "carb", "fat", "sugar", "sodium")):
+            if scan.nutrition:
+                n = scan.nutrition
+                basis_note = "estimated from a typical product listing" if n.basis.value == "estimated" else (
+                    "read from the label in your photo" if n.basis.value == "label" else "a general reference value for this food"
+                )
+                return (
+                    f"Per {n.serving_size}: about {n.calories} calories, {n.protein_g}g protein, "
+                    f"{n.carbs_g}g carbs, {n.fat_g}g fat. These numbers are {basis_note}, so the "
+                    "actual package or fruit in front of you is always the more reliable source."
+                )
+            return "This scan doesn't have nutrition data — that's expected for wild plants, mushrooms, or anything a photo alone can't quantify."
+
+        if any(word in topic for word in ("recipe", "cook", "make", "prepare")):
+            if scan.recipes:
+                titles = ", ".join(r.title for r in scan.recipes[:3])
+                return f"A couple of ideas already on this scan: {titles}. Open the Recipes tab for the full ingredients and steps."
+            return "No recipes here — that's intentional for wild finds, low-confidence matches, or anything flagged with a safety concern."
+
+        if wild:
             return (
-                f"The image resembles {scan.identification.name}, but a photo cannot establish "
-                "that a wild species is safe to eat. Please use a qualified local expert."
+                f"This looks like {scan.identification.name} ({confidence_pct}% confidence from the photo), "
+                f"but {scan.identification.name.lower()} identification isn't something a single image can "
+                "confirm safely. Ask me about the evidence or safety notes, or check with a local expert "
+                "before doing anything with it."
             )
         return (
-            f"This scan identified {scan.identification.name} with "
-            f"{round(scan.identification.confidence * 100)}% confidence. "
-            f"{scan.description} Always check the product or produce directly before consuming it."
+            f"This scan identified {scan.identification.name} at {confidence_pct}% confidence. "
+            f"{scan.description} Ask me about the evidence, safety notes, or nutrition, and I'll stick to "
+            "what's recorded in this scan."
         )
 
+
     async def generate_recipes(self, scan: ScanResult, preferences: list[str]) -> list[Recipe]:
-        del preferences
         if scan.recipes:
             return [recipe.model_copy(deep=True) for recipe in scan.recipes]
         if scan.identification.category in {Category.FOOD, Category.PACKAGED_FOOD}:
+            name = scan.identification.name
+            pref_note = f" Adjusted for: {', '.join(preferences)}." if preferences else ""
             return [
                 Recipe(
-                    title=f"Simple {scan.identification.name} snack",
-                    time_minutes=5,
+                    title=f"Quick {name.lower()} plate",
+                    time_minutes=8,
                     difficulty=Difficulty.EASY,
-                    ingredients=[scan.identification.name, "Optional garnish"],
-                    steps=["Check the item is fresh and matches the scan.", "Prepare and serve."],
-                    dietary_notes=["Review ingredient labels for personal allergens."],
-                )
+                    ingredients=[name, "A squeeze of lemon", "A pinch of salt"],
+                    steps=[
+                        f"Rinse and inspect the {name.lower()} for freshness before using it.",
+                        f"Slice or portion the {name.lower()} to your preferred size.",
+                        f"Finish with lemon and salt, then serve right away.{pref_note}",
+                    ],
+                    dietary_notes=["Check the ingredient label or produce for personal allergens before eating."],
+                ),
+                Recipe(
+                    title=f"{name} snack bowl",
+                    time_minutes=10,
+                    difficulty=Difficulty.EASY,
+                    ingredients=[name, "1 cup mixed greens or grain of choice", "A drizzle of olive oil"],
+                    steps=[
+                        f"Combine the {name.lower()} with your base of greens or grains.",
+                        "Add olive oil and toss gently.",
+                        "Taste and adjust seasoning before serving.",
+                    ],
+                    dietary_notes=[f"Swap the base to fit dietary needs.{pref_note}".strip()],
+                ),
             ]
         return []
 
