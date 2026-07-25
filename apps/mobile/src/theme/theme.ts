@@ -64,5 +64,7 @@ export const categoryStyles: Record<ScanCategory, CategoryStyle> = {
   packaged_food: { label: 'Packaged food', shortLabel: 'P', foreground: '#683C13', background: colors.sunPale, accent: colors.sun },
   plant: { label: 'Plant', shortLabel: 'L', foreground: colors.forest, background: colors.mossPale, accent: colors.moss },
   mushroom: { label: 'Wild mushroom', shortLabel: 'M', foreground: '#7B3428', background: colors.coralPale, accent: colors.coral },
-  unknown: { label: 'Needs review', shortLabel: '?', foreground: colors.blue, background: colors.bluePale, accent: colors.blue },
+  // Recognized non-food. Reads as a hazard, not as an unresolved identification.
+  hazardous_nonfood: { label: 'Not food', shortLabel: '!', foreground: '#702A20', background: colors.coralPale, accent: colors.coral },
+  unknown: { label: 'Unidentified', shortLabel: '?', foreground: colors.blue, background: colors.bluePale, accent: colors.blue },
 };

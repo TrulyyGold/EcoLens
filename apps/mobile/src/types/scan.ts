@@ -1,5 +1,5 @@
 export type ScanStatus = 'complete' | 'needs_review';
-export type ScanCategory = 'food' | 'packaged_food' | 'plant' | 'mushroom' | 'unknown';
+export type ScanCategory = 'food' | 'packaged_food' | 'plant' | 'mushroom' | 'hazardous_nonfood' | 'unknown';
 export type ConfidenceLabel = 'high' | 'moderate' | 'low';
 export type RiskLevel = 'low' | 'caution' | 'high' | 'unknown';
 export type NutritionBasis = 'label' | 'estimated' | 'general' | 'unavailable';
@@ -27,6 +27,12 @@ export interface ScanSafety {
   headline: string;
   warnings: string[];
   do_not_consume: boolean;
+  /**
+   * True when nothing can make the item consumable (non-food, wild mushrooms).
+   * `do_not_consume` also covers merely unverified items an expert could clear,
+   * so the two must stay distinct in the UI copy.
+   */
+  never_consumable?: boolean;
   emergency_guidance?: string | null;
 }
 

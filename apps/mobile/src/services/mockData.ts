@@ -1,7 +1,7 @@
 import type { ScanResult } from '../types/scan';
 import { parseScanResult } from './scanParser';
 
-export type DemoKind = 'banana' | 'mushroom' | 'doritos';
+export type DemoKind = 'banana' | 'mushroom' | 'doritos' | 'bleach';
 
 const banana: ScanResult = {
   scan_id: '11111111-1111-4111-8111-111111111111',
@@ -81,9 +81,10 @@ const mushroom: ScanResult = {
   description: 'The photo shows a pale wild mushroom, but image-only identification cannot reliably separate edible species from toxic look-alikes.',
   safety: {
     risk_level: 'high',
-    headline: 'Potentially poisonous wild mushroom',
-    warnings: ['Do not taste or consume it.', 'Keep it away from children and pets.', 'A photo cannot confirm mushroom edibility.'],
+    headline: 'Not safe to eat — do not consume this',
+    warnings: ['Do not taste or consume it.', 'Keep it away from children and pets.', 'A photo cannot confirm mushroom edibility.', 'Cooking does not neutralize mushroom toxins.'],
     do_not_consume: true,
+    never_consumable: true,
     emergency_guidance: 'If anyone may have eaten it, contact local poison control or emergency services now. Keep a sample for identification if safe to do so.',
   },
   nutrition: null,
@@ -145,15 +146,55 @@ const doritos: ScanResult = {
   analysis_meta: { model: 'ecolens-demo', prompt_version: 'mobile-v1', mock: true, latency_ms: 460 },
 };
 
-const DEMO_RESULTS: Record<DemoKind, ScanResult> = { banana, mushroom, doritos };
+/**
+ * Household chemical fixture: recognizable, and recognizably not food.
+ * Guards the regression where a known hazard rendered as "needs review" with an
+ * "unknown risk" badge and a "?" category mark.
+ */
+const bleach: ScanResult = {
+  scan_id: '44444444-4444-4444-8444-444444444444',
+  status: 'needs_review',
+  identification: {
+    name: 'Concentrated regular bleach',
+    scientific_name: null,
+    brand: 'Clorox',
+    category: 'hazardous_nonfood',
+    confidence: 0.98,
+    confidence_label: 'high',
+    evidence: ['Clorox wordmark on an opaque white jug', "'Concentrated' and 'Regular Bleach' label text", 'Ribbed handle typical of liquid bleach packaging'],
+    alternatives: [],
+    requires_expert_verification: false,
+  },
+  description: 'A jug of household chlorine bleach photographed on a kitchen counter. It is a cleaning product, not a beverage, despite sitting beside a glass of water.',
+  safety: {
+    risk_level: 'high',
+    headline: 'Not safe to eat — do not consume this',
+    warnings: ['Sodium hypochlorite is corrosive and can cause serious internal injury if swallowed.', 'Never decant bleach into a cup, bottle, or other drink container.', 'Mixing bleach with ammonia or acidic cleaners releases toxic gas.'],
+    do_not_consume: true,
+    never_consumable: true,
+    emergency_guidance: 'If anyone has swallowed this, contact poison control or local emergency services now and follow their instructions.',
+  },
+  nutrition: null,
+  recipes: [],
+  facts: ['Household bleach is typically a 5-9% sodium hypochlorite solution.', 'Bleach degrades over time, which is why containers carry a production date.', 'Diluted bleach solutions lose effectiveness within about 24 hours.'],
+  image_url: null,
+  created_at: '2026-07-24T10:30:00.000Z',
+  chat_available: false,
+  analysis_meta: { model: 'ecolens-demo', prompt_version: 'mobile-v1', mock: true, latency_ms: 480 },
+};
+
+const DEMO_RESULTS: Record<DemoKind, ScanResult> = { banana, mushroom, doritos, bleach };
 
 export function getDemoResult(kind: DemoKind): ScanResult {
   const copy: unknown = JSON.parse(JSON.stringify(DEMO_RESULTS[kind]));
   const parsed = parseScanResult(copy);
+  // Driven by the fixture's own safety state rather than a hardcoded kind, so any
+  // never-consumable fixture is blocked without needing to be listed here.
+  const blocked = parsed.safety.never_consumable === true || parsed.safety.do_not_consume;
   return {
     ...parsed,
-    recipes: kind === 'mushroom' ? [] : parsed.recipes,
-    chat_available: kind === 'mushroom' ? false : parsed.chat_available,
+    recipes: blocked ? [] : parsed.recipes,
+    chat_available: blocked ? false : parsed.chat_available,
     created_at: new Date().toISOString(),
   };
 }
@@ -161,6 +202,7 @@ export function getDemoResult(kind: DemoKind): ScanResult {
 export function inferDemoKind(hint?: string): DemoKind {
   const normalized = hint?.toLowerCase() ?? '';
   if (normalized.includes('mushroom') || normalized.includes('fung')) return 'mushroom';
+  if (normalized.includes('bleach') || normalized.includes('clorox') || normalized.includes('cleaner')) return 'bleach';
   if (normalized.includes('dorito') || normalized.includes('chip') || normalized.includes('package')) return 'doritos';
   return 'banana';
 }

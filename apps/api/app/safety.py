@@ -8,19 +8,50 @@ PLANT_WARNING = (
     "Do not eat a plant based only on an image identification; toxic look-alikes may exist."
 )
 MUSHROOM_WARNING = (
-    "Never eat a wild mushroom based on an app or photo identification; consult a "
-    "qualified local expert."
+    "Wild mushrooms are not safe to eat based on a photo. Toxic species can be visually "
+    "identical to edible ones, and cooking does not neutralize their toxins."
 )
 LOW_CONFIDENCE_WARNING = (
     "The identification is uncertain. Do not consume this item until it is verified by "
     "a qualified expert."
 )
 HIGH_RISK_WARNING = "Do not consume this item. Keep it away from children and pets."
+HAZARDOUS_NONFOOD_WARNING = (
+    "This is not food. Swallowing it can cause serious internal injury; it can also "
+    "burn skin and eyes and release dangerous fumes if mixed with other products."
+)
+NEVER_CONSUMABLE_WARNING = (
+    "No amount of expert verification makes this item safe to eat."
+)
 MEDICAL_BOUNDARY = (
     "EcoLens cannot diagnose, treat, or provide medical advice. If someone may have "
     "eaten a harmful item or has symptoms, contact local emergency services or poison "
     "control now."
 )
+
+# Ordered least to most severe. Safety state may only ever move up this scale.
+_RISK_SEVERITY: dict[str, int] = {
+    RiskLevel.LOW: 0,
+    RiskLevel.CAUTION: 1,
+    RiskLevel.UNKNOWN: 2,
+    RiskLevel.HIGH: 3,
+}
+
+
+def escalate_risk(current: RiskLevel | str, floor: RiskLevel | str) -> str:
+    """Return whichever risk level is more severe.
+
+    Safety rules previously assigned risk directly, which let a category or
+    confidence rule silently *downgrade* a hazard the provider had already
+    flagged as high (bleach and low-confidence toxic fungi both surfaced as
+    merely "unknown"). Escalating instead of assigning keeps the deterministic
+    floor without ever discarding a more severe finding.
+    """
+
+    current_rank = _RISK_SEVERITY.get(current, 0)
+    floor_rank = _RISK_SEVERITY.get(floor, 0)
+    return str(current if current_rank >= floor_rank else floor)
+
 
 _MEDICAL_REQUEST = re.compile(
     r"\b(diagnos(?:e|is)|dose|dosage|prescri(?:be|ption)|medication|medicine|"
@@ -76,35 +107,52 @@ def apply_safety_policy(draft: AnalysisDraft) -> tuple[AnalysisDraft, ScanStatus
     if identification.category == Category.PLANT:
         warnings.append(PLANT_WARNING)
         identification.requires_expert_verification = True
-        safety.risk_level = (
-            RiskLevel.CAUTION if safety.risk_level == RiskLevel.LOW else safety.risk_level
-        )
+        safety.risk_level = escalate_risk(safety.risk_level, RiskLevel.CAUTION)
         safety.do_not_consume = True
         status = ScanStatus.NEEDS_REVIEW
 
     if identification.category == Category.MUSHROOM:
         warnings.append(MUSHROOM_WARNING)
         identification.requires_expert_verification = True
-        safety.risk_level = RiskLevel.HIGH
+        safety.risk_level = escalate_risk(safety.risk_level, RiskLevel.HIGH)
         safety.do_not_consume = True
+        # A photo cannot clear a wild mushroom, and no expert consultation makes an
+        # unverified one edible, so the copy must not dangle verification as a path.
+        safety.never_consumable = True
+        status = ScanStatus.NEEDS_REVIEW
+
+    if identification.category == Category.HAZARDOUS_NONFOOD:
+        warnings.append(HAZARDOUS_NONFOOD_WARNING)
+        safety.risk_level = escalate_risk(safety.risk_level, RiskLevel.HIGH)
+        safety.do_not_consume = True
+        safety.never_consumable = True
+        # Not an identification problem: the item is known, and known to be inedible.
+        identification.requires_expert_verification = False
         status = ScanStatus.NEEDS_REVIEW
 
     if low_confidence:
         warnings.append(LOW_CONFIDENCE_WARNING)
         identification.requires_expert_verification = True
-        safety.risk_level = RiskLevel.UNKNOWN
+        safety.risk_level = escalate_risk(safety.risk_level, RiskLevel.UNKNOWN)
         safety.do_not_consume = True
         status = ScanStatus.NEEDS_REVIEW
 
     if risky:
         warnings.append(HIGH_RISK_WARNING)
-        identification.requires_expert_verification = True
+        if not safety.never_consumable:
+            identification.requires_expert_verification = True
         status = ScanStatus.NEEDS_REVIEW
 
     if identification.category == Category.UNKNOWN:
-        safety.risk_level = RiskLevel.UNKNOWN
+        safety.risk_level = escalate_risk(safety.risk_level, RiskLevel.UNKNOWN)
         safety.do_not_consume = True
         identification.requires_expert_verification = True
+        status = ScanStatus.NEEDS_REVIEW
+
+    if safety.never_consumable:
+        warnings.append(NEVER_CONSUMABLE_WARNING)
+        safety.do_not_consume = True
+        safety.risk_level = escalate_risk(safety.risk_level, RiskLevel.HIGH)
         status = ScanStatus.NEEDS_REVIEW
 
     if identification.requires_expert_verification:
@@ -118,6 +166,7 @@ def apply_safety_policy(draft: AnalysisDraft) -> tuple[AnalysisDraft, ScanStatus
         or low_confidence
         or risky
         or safety.do_not_consume
+        or safety.never_consumable
         or identification.requires_expert_verification
     ):
         result.recipes = []
@@ -144,7 +193,15 @@ def apply_safety_policy(draft: AnalysisDraft) -> tuple[AnalysisDraft, ScanStatus
 
     safety.warnings = list(dict.fromkeys(warnings))
     safety.headline = _safe_headline(safety)
-    if safety.do_not_consume:
+    if safety.never_consumable:
+        # Deliberately gives no first-aid instruction: telling a user whether to
+        # induce vomiting is exactly the medical advice this product refuses to
+        # give, and it also trips the output filter below. Route to the experts.
+        safety.emergency_guidance = (
+            "If anyone has swallowed this, contact poison control or local emergency "
+            "services now and follow their instructions."
+        )
+    elif safety.do_not_consume:
         safety.emergency_guidance = (
             "If ingestion may have occurred or symptoms develop, contact local emergency "
             "services or poison control promptly."
@@ -161,6 +218,10 @@ def apply_safety_policy(draft: AnalysisDraft) -> tuple[AnalysisDraft, ScanStatus
 
 def _safe_headline(safety: object) -> str:
     # Kept deterministic so provider wording can never contradict a block.
+    # Order matters: the strongest true statement wins, and only genuinely
+    # unverified items are offered expert verification as a path forward.
+    if getattr(safety, "never_consumable", False):
+        return "Not safe to eat — do not consume this"
     if getattr(safety, "do_not_consume", False):
         return "Do not consume without expert verification"
     if getattr(safety, "risk_level", None) == RiskLevel.CAUTION:

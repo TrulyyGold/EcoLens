@@ -37,7 +37,7 @@
         "brand": { "type": ["string", "null"] },
         "category": {
           "type": "string",
-          "enum": ["food", "packaged_food", "plant", "mushroom", "unknown"]
+          "enum": ["food", "packaged_food", "plant", "mushroom", "hazardous_nonfood", "unknown"]
         },
         "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
         "confidence_label": { "type": "string", "enum": ["high", "moderate", "low"] },
@@ -72,6 +72,7 @@
         "headline": { "type": "string" },
         "warnings": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
         "do_not_consume": { "type": "boolean" },
+        "never_consumable": { "type": "boolean" },
         "emergency_guidance": { "type": ["string", "null"] }
       }
     },

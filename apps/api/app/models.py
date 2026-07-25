@@ -28,6 +28,7 @@ class Category(StrEnum):
     PACKAGED_FOOD = "packaged_food"
     PLANT = "plant"
     MUSHROOM = "mushroom"
+    HAZARDOUS_NONFOOD = "hazardous_nonfood"
     UNKNOWN = "unknown"
 
 
@@ -65,6 +66,7 @@ class DemoScenario(StrEnum):
     BANANA = "banana"
     MUSHROOM = "mushroom"
     DORITOS = "doritos"
+    BLEACH = "bleach"
 
 
 class IdentificationAlternative(APIModel):
@@ -89,6 +91,13 @@ class Safety(APIModel):
     headline: str
     warnings: list[str] = Field(min_length=1)
     do_not_consume: bool
+    never_consumable: bool = False
+    """True when no verification can make the item consumable.
+
+    Distinct from `do_not_consume`, which also covers merely unverified items.
+    An unidentified berry is do-not-consume but an expert could clear it; bleach
+    and toxic fungi can never be cleared, and the copy must not imply otherwise.
+    """
     emergency_guidance: str | None = None
 
 

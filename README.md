@@ -85,8 +85,9 @@ python3 scripts/verify_repo.py
 
 1. Open the scanner and select the known snack fixture.
 2. Confirm the result displays a provenance label for nutrition.
-3. Open the mushroom fixture and confirm **Do not consume** appears and recipes are absent.
-4. Ask a follow-up question on a safe food result, favorite it, and reopen it from the journal.
+3. Open the mushroom fixture and confirm **Not safe to eat** appears, recipes are absent, and no expert-review badge is shown.
+4. Open the bleach fixture (`demo_scenario=bleach`) and confirm it reads **Not safe to eat · High risk** rather than "needs review" or "unknown risk".
+5. Ask a follow-up question on a safe food result, favorite it, and reopen it from the journal.
 
 The canonical result contract is [`contracts/scan-result.schema.json`](contracts/scan-result.schema.json). Pydantic models constrain provider and API output at runtime, the mobile client applies a strict parser, and backend contract tests validate successful mock responses against the checked-in schema.
 
@@ -95,7 +96,7 @@ The canonical result contract is [`contracts/scan-result.schema.json`](contracts
 ### In the two-day build
 
 - One-image capture/library input
-- Four categories: `food`, `packaged_food`, `plant`, `mushroom` (plus `unknown`)
+- Five categories: `food`, `packaged_food`, `plant`, `mushroom`, `hazardous_nonfood` (plus `unknown`)
 - Contract-validated structured analysis
 - Visible confidence, evidence, alternatives, and safety status
 - Provenance labels for nutrition values
